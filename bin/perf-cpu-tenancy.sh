@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e -u -o pipefail
+
+SCRIPT_DIR=$(dirname "$0")
+source $SCRIPT_DIR/validate.sh
+
+PID="$1"
+
+source $SCRIPT_DIR/options.sh
+
+echo "starting $PERF_DATA_FILE"
+
+sudo perf record -F $PERF_SAMPLE_FREQUENCY -o $PERF_DATA_FILE -e cycles -a -- sleep $PERF_RECORD_DURATION
+sudo perf script -i $PERF_DATA_FILE -F comm,pid,tid,cpu,time,event | grep -E "\s+$PID" > $PERF_SCRIPT_FILE
+
+cat $PERF_SCRIPT_FILE | python $SCRIPT_DIR/../src/cpu/cpu_tenancy.py
+

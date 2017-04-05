@@ -57,12 +57,17 @@ def calculate_number_of_columns(cpu_tenancy_by_pid):
     return column_count
 
 def get_fill(cpu_id):
-    return CPU_COLOURS[cpu_id]
+    # TODO support 256 cpus
+    return CPU_COLOURS[cpu_id % len(CPU_COLOURS)]
 
-def write_cell(writer, x_offset, y_offset, width, height, cpu_id, process_id):
-    writer.write('<g><title>{}</title>'.format(process_id))
+def write_cell(writer, x_offset, y_offset, width, height, cpu_id, tid):
+    thread_name = str(tid)
+    cell_text = '{}/CPU{}'.format(thread_name, cpu_id)
+    writer.write('<g><title>{}</title>'.format(cell_text))
     writer.write('<rect x="{}" y="{}" width="{}" height="{}" fill="{}">'.format(x_offset, y_offset, width, height, get_fill(cpu_id)))
-    writer.write('</rect></g>\n')
+    writer.write('</rect>\n')
+    writer.write('<text x="{}" y="{}" font-size="12" font-family="monospace" fill="#000">{}</text>'.format(x_offset, y_offset + 12, "CPU" + str(cpu_id)))
+    writer.write('</g>\n')
 
 def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count):
     writer = open('test.svg', 'w')
@@ -91,4 +96,4 @@ def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count):
 if __name__ == "__main__":
     cpu_tenancy_by_pid, max_sample_count = get_cpu_tenancy_count_by_tid()
 
-    write_svg(1400, 600, cpu_tenancy_by_pid, max_sample_count)
+    write_svg(1200, 600, cpu_tenancy_by_pid, max_sample_count)
