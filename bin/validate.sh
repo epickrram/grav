@@ -2,7 +2,10 @@
 
 set -e -u -o pipefail
 
-if [[ "${PERF_MAP_AGENT_DIR:-}" == "" ]]; then
-    echo "Please set environment variable PERF_MAP_AGENT_DIR to the location of your local clone of https://github.com/perf-map-agent"
+JSTACK=$(which jstack)
+
+if [[ "$JSTACK" == "" ]]; then
+    echo "Cannot find the jstack executable on PATH"
+    echo "Please add JDK_HOME/bin to your PATH"
     exit 1
 fi

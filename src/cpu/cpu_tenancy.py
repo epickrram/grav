@@ -66,10 +66,10 @@ def write_cell(writer, x_offset, y_offset, width, height, cpu_id, tid):
     writer.write('<g><title>{}</title>'.format(cell_text))
     writer.write('<rect x="{}" y="{}" width="{}" height="{}" fill="{}">'.format(x_offset, y_offset, width, height, get_fill(cpu_id)))
     writer.write('</rect>\n')
-    writer.write('<text x="{}" y="{}" font-size="12" font-family="monospace" fill="#000">{}</text>'.format(x_offset, y_offset + 12, "CPU" + str(cpu_id)))
+    #writer.write('<text x="{}" y="{}" font-size="12" font-family="monospace" fill="#000">{}</text>'.format(x_offset, y_offset + 12, "CPU" + str(cpu_id)))
     writer.write('</g>\n')
 
-def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count):
+def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name):
     writer = open('test.svg', 'w')
     write_svg_header(writer, width, height)
 
@@ -78,6 +78,9 @@ def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count):
 
     x_offset = 0
     y_offset = height
+    thread_name_to_tid = dict()
+    for t in tid_to_thread_name:
+        thread_name_to_tid[tid_to_thread_name[t]] = t
     for pid in sorted(cpu_tenancy_by_pid.iterkeys()):
         for tid in sorted(cpu_tenancy_by_pid[pid].iterkeys()):
             cpu_sample_count = cpu_tenancy_by_pid[pid][tid]
@@ -85,7 +88,10 @@ def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count):
             for cpu_id in sorted(cpu_sample_count.iterkeys()):
                 if cpu_id is not 'all':
                     sample_height = single_sample_height * cpu_sample_count[cpu_id]
-                    write_cell(writer, x_offset, y_offset - sample_height, column_width, sample_height, cpu_id, str(tid))
+                    thread_name = "unknown"
+                    if tid in tid_to_thread_name:
+                        thread_name = tid_to_thread_name[tid]
+                    write_cell(writer, x_offset, y_offset - sample_height, column_width, sample_height, cpu_id, thread_name)
                     y_offset -= sample_height
 
             x_offset += column_width
@@ -93,7 +99,22 @@ def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count):
     write_svg_footer(writer)
     writer.close()
 
+def get_tid_to_thread_name(jstack_file):
+    tid_to_thread_name = dict()
+    for line in open(jstack_file):
+        if line.find("nid=") != -1:
+            try:
+                hex_tid = line.split('nid=')[1].split(" ")[0]
+                thread_name = line.split('"')[1]
+                decimal_tid = int(hex_tid, 0)
+                tid_to_thread_name[decimal_tid] = thread_name
+            except IndexError:
+                print "Failed to parse tid from line: " + line
+    return tid_to_thread_name
+
+
 if __name__ == "__main__":
+    tid_to_thread_name = get_tid_to_thread_name(sys.argv[1])
     cpu_tenancy_by_pid, max_sample_count = get_cpu_tenancy_count_by_tid()
 
-    write_svg(1200, 600, cpu_tenancy_by_pid, max_sample_count)
+    write_svg(1200, 600, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name)

@@ -21,5 +21,5 @@ fi
 
 
 if [[ "${PERF_RECORD_DURATION:-}" == "" ]];then
-    PERF_RECORD_DURATION=5
+    PERF_RECORD_DURATION=15
 fi
