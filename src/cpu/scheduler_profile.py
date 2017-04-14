@@ -71,11 +71,11 @@ def write_cell(writer, x_offset, y_offset, width, height, cpu_id, tid):
     writer.write('<text x="{}" y="{}" width="{}" font-size="12" font-family="monospace" style="text-overflow: clip" fill="#000">{}</text>'.format(x_offset, y_offset + 12, width, cell_text))
     writer.write('</g>\n')
 
-def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name):
-    writer = open('test.svg', 'w')
+def write_svg(width, height, thread_scheduling, max_sample_count, tid_to_thread_name):
+    writer = open('scheduler_profile.svg', 'w')
     write_svg_header(writer, width, height)
 
-    column_width = float(width / calculate_number_of_columns(cpu_tenancy_by_pid))
+    column_width = float(width / len(tid_to_thread_name))
     single_sample_height = float(height / float(max_sample_count))
 
     x_offset = 0
@@ -83,23 +83,57 @@ def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count, tid_to_thread
     thread_name_to_tid = dict()
     for t in tid_to_thread_name:
         thread_name_to_tid[tid_to_thread_name[t]] = t
-    for pid in sorted(cpu_tenancy_by_pid.iterkeys()):
-        for tid in sorted(cpu_tenancy_by_pid[pid].iterkeys()):
-            cpu_sample_count = cpu_tenancy_by_pid[pid][tid]
-            y_offset = height
-            for cpu_id in sorted(cpu_sample_count.iterkeys()):
-                if cpu_id is not 'all':
-                    sample_height = single_sample_height * cpu_sample_count[cpu_id]
-                    thread_name = "unknown"
-                    if tid in tid_to_thread_name:
-                        thread_name = tid_to_thread_name[tid]
-                    write_cell(writer, x_offset, y_offset - sample_height, column_width, sample_height, cpu_id, thread_name)
-                    y_offset -= sample_height
-
-            x_offset += column_width
+    # for pid in sorted(cpu_tenancy_by_pid.iterkeys()):
+    #     for tid in sorted(cpu_tenancy_by_pid[pid].iterkeys()):
+    #         cpu_sample_count = cpu_tenancy_by_pid[pid][tid]
+    #         y_offset = height
+    #         for cpu_id in sorted(cpu_sample_count.iterkeys()):
+    #             if cpu_id is not 'all':
+    #                 sample_height = single_sample_height * cpu_sample_count[cpu_id]
+    #                 thread_name = "unknown"
+    #                 if tid in tid_to_thread_name:
+    #                     thread_name = tid_to_thread_name[tid]
+    #                 write_cell(writer, x_offset, y_offset - sample_height, column_width, sample_height, cpu_id, thread_name)
+    #                 y_offset -= sample_height
+    #
+    #         x_offset += column_width
                 
     write_svg_footer(writer)
     writer.close()
+
+
+def get_thread_scheduling(thread_ids):
+    thread_scheduling = dict()
+    total_samples = dict()
+    for tid in thread_ids:
+        counts = dict()
+        counts['R'] = 0
+        counts['S'] = 0
+        counts['D'] = 0
+        thread_scheduling[tid] = counts
+        total_samples[tid] = 0
+
+    for line in sys.stdin:
+        if line.find("sched_switch") > -1:
+            tokens = re.split("\s+", line.strip())
+            tid = int(tokens[0][tokens[0].rfind("-") + 1:])
+            if tid in thread_ids:
+                outgoing_state = tokens[6]
+                if outgoing_state not in thread_scheduling[tid]:
+                    print "unknown state: " + str(outgoing_state)
+                    thread_scheduling[tid][outgoing_state] = 0
+                thread_scheduling[tid][outgoing_state] += 1
+                total_samples[tid]
+            
+    max_sample_count = 0
+    for tid in total_samples:
+        tid_sample_count = 0
+        for state in thread_scheduling[tid]:
+            tid_sample_count += thread_scheduling[tid][state]
+        if tid_sample_count > max_sample_count:
+            max_sample_count = tid_sample_count
+
+    return (thread_scheduling, max_sample_count)
 
 def get_tid_to_thread_name(jstack_file):
     tid_to_thread_name = dict()
@@ -117,6 +151,9 @@ def get_tid_to_thread_name(jstack_file):
 
 if __name__ == "__main__":
     tid_to_thread_name = get_tid_to_thread_name(sys.argv[1])
-    cpu_tenancy_by_pid, max_sample_count = get_cpu_tenancy_count_by_tid()
 
-    write_svg(1200, 600, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name)
+    thread_scheduling, max_sample_count = get_thread_scheduling(tid_to_thread_name.keys())
+    print str(thread_scheduling)
+#    cpu_tenancy_by_pid, max_sample_count = get_cpu_tenancy_count_by_tid()
+
+    write_svg(1200, 600, thread_scheduling, max_sample_count, tid_to_thread_name)
