@@ -5,7 +5,12 @@ set -e -u -o pipefail
 SCRIPT_DIR=$(dirname "$0")
 source $SCRIPT_DIR/validate.sh
 
-PID="$1"
+PID="${1:-}"
+
+if [[ "$PID" == "" ]]; then
+    echo "Please supply pid as first parameter"
+    exit 1
+fi
 
 source $SCRIPT_DIR/options.sh
 JSTACK_FILE="$PERF_DATA_DIR/jstack-$PID.txt"

@@ -26,7 +26,6 @@ BPF_TABLE("hash", pid_t, struct scheduled_out_state_t, scheduled_out_states, 102
 int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
 
     pid_t prev_pid = prev->pid;
-    //pid_t prev_tid = prev->tgid;
 
     struct scheduled_out_state_t *states = scheduled_out_states.lookup(&prev_pid);
     if (states == 0) {
@@ -60,7 +59,9 @@ for k,v in b["scheduled_out_states"].iteritems():
     tid_stats['S'] = v.sleeping
     tid_stats['D'] = v.uninterruptible
     tid_stats['U'] = v.unknown
-    tid_stats['total'] = v.running + v.sleeping + v.uninterruptible + v.unknown
-    results[int(k.value)] = tid_stats
+    total = v.running + v.sleeping + v.uninterruptible + v.unknown
+    tid_stats['total'] = total
+    if total != 0:
+        results[int(k.value)] = tid_stats
 
-    json.dump(results, open('scheduler-states.json', 'w'))
+    json.dump(results, open(sys.argv[2], 'w'))
