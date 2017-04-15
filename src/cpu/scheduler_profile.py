@@ -1,49 +1,10 @@
 #!/usr/bin/python
 
-import re
+import json
 import sys
 
-# TODO apply text-overflow: ellipsis to svg text element, plus limit width?
+STATE_COLOURS = {'S': '#0c0', 'R': '#900', 'D': '#FCE94F', 'U': '#ccc'}
 
-CPU_COLOURS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
-#perf script -F comm,pid,tid,cpu,time,event
-
-def get_cpu_tenancy_count_by_tid():
-    pid_map = dict()
-    max_sample_count = 0
-    line_count = 0
-    
-    for line in sys.stdin:
-        try:
-            line_count += 1
-            tokens = re.split("\s+", line.strip())
-            process_id = re.search("([0-9]+)/([0-9]+)", tokens[1].strip())
-            if process_id is not None:
-                pid = int(process_id.group(1))
-                tid = int(process_id.group(2))
-
-                if pid not in pid_map:
-                    pid_map[pid] = dict()
-                tid_map = pid_map[pid]
-                if tid not in tid_map:
-                    tid_map[tid] = dict()
-                cpu_sample_count = tid_map[tid]
-                cpu_id = int(re.search("\[([0-9]+)\]", tokens[2]).group(1))
-           
-                if 'all' not in cpu_sample_count:
-                    cpu_sample_count['all'] = 0
-                if cpu_id not in cpu_sample_count:
-                    cpu_sample_count[cpu_id] = 0
-                cpu_sample_count[cpu_id] += 1
-                cpu_sample_count['all'] += 1
-
-                if cpu_sample_count['all'] > max_sample_count:
-                    max_sample_count = cpu_sample_count['all']
-
-        except AttributeError:
-            print "failed to parse line: " + line
-
-    return (pid_map, max_sample_count)
 
 def write_svg_header(writer, width, height):
     writer.write('<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">')
@@ -58,82 +19,46 @@ def calculate_number_of_columns(cpu_tenancy_by_pid):
         column_count += len(cpu_tenancy_by_pid[pid])
     return column_count
 
-def get_fill(cpu_id):
-    # TODO support 256 cpus
-    return CPU_COLOURS[cpu_id % len(CPU_COLOURS)]
+def get_fill(state):
+    return STATE_COLOURS[state]
 
-def write_cell(writer, x_offset, y_offset, width, height, cpu_id, tid):
-    thread_name = str(tid)
-    cell_text = '{}/CPU{}'.format(thread_name, cpu_id)
+def write_cell(writer, x_offset, y_offset, width, height, state, thread_name):
+    cell_text = '{}/{}'.format(thread_name, state)
     writer.write('<g><title>{}</title>'.format(cell_text))
-    writer.write('<rect x="{}" y="{}" width="{}" height="{}" fill="{}">'.format(x_offset, y_offset, width, height, get_fill(cpu_id)))
+    writer.write('<rect x="{}" y="{}" width="{}" height="{}" fill="{}">'.format(x_offset, y_offset, width, height, get_fill(state)))
     writer.write('</rect>\n')
     writer.write('<text x="{}" y="{}" width="{}" font-size="12" font-family="monospace" style="text-overflow: clip" fill="#000">{}</text>'.format(x_offset, y_offset + 12, width, cell_text))
     writer.write('</g>\n')
 
-def write_svg(width, height, thread_scheduling, max_sample_count, tid_to_thread_name):
+
+def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name):
     writer = open('scheduler_profile.svg', 'w')
     write_svg_header(writer, width, height)
 
     column_width = float(width / len(tid_to_thread_name))
-    single_sample_height = float(height / float(max_sample_count))
+    single_sample_height = float(height / float(max_total))
 
     x_offset = 0
-    y_offset = height
     thread_name_to_tid = dict()
     for t in tid_to_thread_name:
         thread_name_to_tid[tid_to_thread_name[t]] = t
-    # for pid in sorted(cpu_tenancy_by_pid.iterkeys()):
-    #     for tid in sorted(cpu_tenancy_by_pid[pid].iterkeys()):
-    #         cpu_sample_count = cpu_tenancy_by_pid[pid][tid]
-    #         y_offset = height
-    #         for cpu_id in sorted(cpu_sample_count.iterkeys()):
-    #             if cpu_id is not 'all':
-    #                 sample_height = single_sample_height * cpu_sample_count[cpu_id]
-    #                 thread_name = "unknown"
-    #                 if tid in tid_to_thread_name:
-    #                     thread_name = tid_to_thread_name[tid]
-    #                 write_cell(writer, x_offset, y_offset - sample_height, column_width, sample_height, cpu_id, thread_name)
-    #                 y_offset -= sample_height
-    #
-    #         x_offset += column_width
-                
+    for tid in sorted(thread_scheduling.iterkeys()):
+        y_offset = height
+        tid_sample_count = thread_scheduling[tid]['total']
+        # TODO why is total sample count zero?
+        if tid_sample_count > 0:
+            single_sample_height = float(height / float(thread_scheduling[tid]['total']))
+            for state in ['S', 'R', 'D', 'U']:
+                sample_count = thread_scheduling[tid][state]
+                if sample_count > 0:
+                    state_height = sample_count * single_sample_height
+                    write_cell(writer, x_offset, y_offset - state_height, column_width, state_height, state, tid_to_thread_name[tid])
+                    y_offset -= state_height
+            x_offset += column_width
+
     write_svg_footer(writer)
     writer.close()
 
-
-def get_thread_scheduling(thread_ids):
-    thread_scheduling = dict()
-    total_samples = dict()
-    for tid in thread_ids:
-        counts = dict()
-        counts['R'] = 0
-        counts['S'] = 0
-        counts['D'] = 0
-        thread_scheduling[tid] = counts
-        total_samples[tid] = 0
-
-    for line in sys.stdin:
-        if line.find("sched_switch") > -1:
-            tokens = re.split("\s+", line.strip())
-            tid = int(tokens[0][tokens[0].rfind("-") + 1:])
-            if tid in thread_ids:
-                outgoing_state = tokens[6]
-                if outgoing_state not in thread_scheduling[tid]:
-                    print "unknown state: " + str(outgoing_state)
-                    thread_scheduling[tid][outgoing_state] = 0
-                thread_scheduling[tid][outgoing_state] += 1
-                total_samples[tid]
-            
-    max_sample_count = 0
-    for tid in total_samples:
-        tid_sample_count = 0
-        for state in thread_scheduling[tid]:
-            tid_sample_count += thread_scheduling[tid][state]
-        if tid_sample_count > max_sample_count:
-            max_sample_count = tid_sample_count
-
-    return (thread_scheduling, max_sample_count)
 
 def get_tid_to_thread_name(jstack_file):
     tid_to_thread_name = dict()
@@ -143,17 +68,26 @@ def get_tid_to_thread_name(jstack_file):
                 hex_tid = line.split('nid=')[1].split(" ")[0]
                 thread_name = line.split('"')[1]
                 decimal_tid = int(hex_tid, 0)
-                tid_to_thread_name[decimal_tid] = thread_name
+                tid_to_thread_name[str(decimal_tid)] = thread_name
             except IndexError:
                 print "Failed to parse tid from line: " + line
     return tid_to_thread_name
 
 
+def filter_scheduler_info(thread_scheduling_info, threads_to_include):
+    max_total_value = 0
+    filtered = dict()
+    for k in thread_scheduling_info.iterkeys():
+        if k in threads_to_include.keys():
+            filtered[k] = thread_scheduling_info[k]
+            if filtered[k]['total'] > max_total_value:
+                max_total_value = filtered[k]['total']
+
+    return (filtered, max_total_value)
+
+
 if __name__ == "__main__":
     tid_to_thread_name = get_tid_to_thread_name(sys.argv[1])
-
-    thread_scheduling, max_sample_count = get_thread_scheduling(tid_to_thread_name.keys())
-    print str(thread_scheduling)
-#    cpu_tenancy_by_pid, max_sample_count = get_cpu_tenancy_count_by_tid()
-
-    write_svg(1200, 600, thread_scheduling, max_sample_count, tid_to_thread_name)
+    thread_scheduling = json.load(sys.stdin)
+    filtered_scheduling, max_total = filter_scheduler_info(thread_scheduling, tid_to_thread_name)
+    write_svg(1200, 600, filtered_scheduling, max_total, tid_to_thread_name)
