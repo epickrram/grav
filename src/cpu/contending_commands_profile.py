@@ -39,19 +39,17 @@ def write_svg(width, height, ordered_commands, max_total, process_id):
     writer = open('contending-commands-{}.svg'.format(process_id), 'w')
     write_svg_header(writer, width, height)
 
-    column_width = float(width / len(ordered_commands))
-    single_sample_height = float(height / float(max_total))
+    row_height = float(height / len(ordered_commands))
+    single_sample_width = float(width / float(max_total))
 
     x_offset = 0
     counter = 0
+    y_offset = 0
     for command_count in ordered_commands:
-        y_offset = height
         sample_count = command_count["count"]
         if sample_count > 0:
-            state_height = sample_count * single_sample_height
-            write_cell(writer, x_offset, y_offset - state_height, column_width, state_height, command_count["command"], sample_count, max_total, counter)
-            y_offset -= state_height
-        x_offset += column_width
+            write_cell(writer, x_offset, y_offset, sample_count * single_sample_width, row_height, command_count["command"], sample_count, max_total, counter)
+        y_offset += row_height
         counter += 1
     write_svg_footer(writer)
     writer.close()

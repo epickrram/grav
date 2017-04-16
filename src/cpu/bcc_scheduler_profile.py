@@ -21,10 +21,6 @@ struct scheduled_out_state_t {
     int unknown;
 };
 
-struct proc_name_t {
-    char comm[TASK_COMM_LEN];
-};
-
 struct proc_counter_t {
     int count;
     char proc_name[TASK_COMM_LEN];
@@ -37,16 +33,14 @@ int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
 
     pid_t prev_pid = prev->pid;
     pid_t parent_pid = prev->parent->pid;
-    // TODO need parent pid - current()?
     pid_t incoming_pid = bpf_get_current_pid_tgid();
+    // TODO need parent pid - current()?
+    // pid_t current_parent_pid = bpf_get_current_task()->parent->pid;
     
-    struct proc_name_t pname = {};
-    bpf_get_current_comm(&pname.comm, sizeof(pname.comm));
-
     struct proc_counter_t *counter = usurpers.lookup(&incoming_pid);
     if (counter == 0) {
         struct proc_counter_t new_counter = {.proc_name = NULL, .count = 0};
-        bpf_get_current_comm(&new_counter.proc_name, sizeof(pname.comm));
+        bpf_get_current_comm(&new_counter.proc_name, sizeof(new_counter.proc_name));
         counter = &new_counter;
         usurpers.update(&incoming_pid, counter);
     }
@@ -96,8 +90,9 @@ json.dump(scheduling_states, open(sys.argv[2], 'w'))
 
 contending_commands = dict()
 for k, v in b["usurpers"].iteritems():
-    if v.proc_name not in contending_commands:
-        contending_commands[v.proc_name] = 0
-    contending_commands[v.proc_name] += 1
+    key = v.proc_name # + "/" + str(k.value)
+    if key not in contending_commands:
+        contending_commands[key] = 0
+    contending_commands[key] += 1
 
 json.dump(contending_commands, open(sys.argv[3], 'w'))
