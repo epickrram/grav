@@ -5,8 +5,8 @@ import sys
 import time
 
 
-if len(sys.argv) < 2:
-    print("Usage: %s <duration-seconds>" % (sys.argv[0]))
+if len(sys.argv) < 3:
+    print("Usage: %s <pid> <duration-seconds>" % (sys.argv[0]))
     sys.exit(1)
 
 prog="""
@@ -36,6 +36,8 @@ int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
     pid_t incoming_pid = bpf_get_current_pid_tgid();
     // TODO need parent pid - current()?
     // pid_t current_parent_pid = bpf_get_current_task()->parent->pid;
+    
+    int pid_to_record = %d;
     
     struct proc_counter_t *counter = usurpers.lookup(&incoming_pid);
     if (counter == 0) {
@@ -69,10 +71,10 @@ int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
 };
 """
 
-b = BPF(text=prog)
+b = BPF(text=prog % (int(sys.argv[1])))
 b.attach_kprobe(event="finish_task_switch", fn_name="trace_finish_task_switch")
 
-time.sleep(int(sys.argv[1]))
+time.sleep(int(sys.argv[2]))
 
 scheduling_states = dict()
 for k,v in b["scheduled_out_states"].iteritems():
@@ -86,7 +88,7 @@ for k,v in b["scheduled_out_states"].iteritems():
     if total != 0:
         scheduling_states[int(k.value)] = tid_stats
 
-json.dump(scheduling_states, open(sys.argv[2], 'w'))
+json.dump(scheduling_states, open(sys.argv[3], 'w'))
 
 contending_commands = dict()
 for k, v in b["usurpers"].iteritems():
@@ -95,4 +97,4 @@ for k, v in b["usurpers"].iteritems():
         contending_commands[key] = 0
     contending_commands[key] += 1
 
-json.dump(contending_commands, open(sys.argv[3], 'w'))
+json.dump(contending_commands, open(sys.argv[4], 'w'))

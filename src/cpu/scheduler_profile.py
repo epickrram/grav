@@ -3,7 +3,8 @@
 import json
 import sys
 
-STATE_COLOURS = {'S': '#0c0', 'R': '#900', 'D': '#FCE94F', 'U': '#ccc'}
+STATE_COLOURS = {'S': '#acff90', 'R': '#ffaeae', 'D': '#fce94f', 'U': '#ccc'}
+STROKE_COLOURS = {'S': '#679657', 'R': '#b07979', 'D': '#b3a639', 'U': '#aaa'}
 
 def write_svg_header(writer, width, height):
     writer.write('<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">')
@@ -25,11 +26,15 @@ def get_fill(state):
     return STATE_COLOURS[state]
 
 
+def get_stroke(state):
+    return STROKE_COLOURS[state]
+
+
 def write_cell(writer, x_offset, y_offset, width, height, state, thread_name, count, total):
     state_percentage = 100 * (count / float(total))
     cell_text = '{}/{} ({:.2f}%)'.format(thread_name, state, state_percentage)
     writer.write('<g><title>{}</title>'.format(cell_text))
-    writer.write('<rect x="{}" y="{}" width="{}" height="{}" fill="{}">'.format(x_offset, y_offset, width, height, get_fill(state)))
+    writer.write('<rect x="{}" y="{}" width="{}" height="{}" style="fill: {}; stroke:{}">'.format(x_offset, y_offset, width, height, get_fill(state), get_stroke(state)))
     writer.write('</rect>\n')
     writer.write('<text x="{}" y="{}" width="{}" font-size="12" font-family="monospace" style="text-overflow: clip" fill="#000">{}</text>'.format(x_offset, y_offset + 12, width, cell_text))
     writer.write('</g>\n')
@@ -81,9 +86,10 @@ def filter_scheduler_info(thread_scheduling_info, threads_to_include):
     filtered = dict()
     for k in thread_scheduling_info.iterkeys():
         if k in threads_to_include.keys():
-            filtered[k] = thread_scheduling_info[k]
-            if filtered[k]['total'] > max_total_value:
-                max_total_value = filtered[k]['total']
+            if thread_scheduling_info[k]["S"] != thread_scheduling_info[k]["total"]:
+                filtered[k] = thread_scheduling_info[k]
+                if filtered[k]['total'] > max_total_value:
+                    max_total_value = filtered[k]['total']
 
     return (filtered, max_total_value)
 
