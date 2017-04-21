@@ -9,6 +9,7 @@ STROKE_COLOURS = {'S': '#679657', 'R': '#b07979', 'D': '#b3a639', 'U': '#aaa'}
 def write_svg_header(writer, width, height):
     writer.write('<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">')
     writer.write('<svg version="1.1" width="' + str(width) + '" height="' + str(height) + '"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n')
+    writer.write('<text text-anchor="middle" x="{}" y="30" font-size="20" font-family="monospace" fill="#000">Thread scheduling states</text>'.format(width / 2))
 
 
 def write_svg_footer(writer):
@@ -47,7 +48,7 @@ def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, p
 
     row_height = float(height / len(thread_scheduling))
 
-    y_offset = 0
+    y_offset = 50
     for tid in sorted(thread_scheduling.iterkeys()):
         x_offset = 0
         tid_sample_count = thread_scheduling[tid]['total']
@@ -99,4 +100,4 @@ if __name__ == "__main__":
     process_id = sys.argv[2]
     thread_scheduling = json.load(sys.stdin)
     filtered_scheduling, max_total = filter_scheduler_info(thread_scheduling, tid_to_thread_name)
-    write_svg(1200, 600, filtered_scheduling, max_total, tid_to_thread_name, process_id)
+    write_svg(1200, 660, filtered_scheduling, max_total, tid_to_thread_name, process_id)
