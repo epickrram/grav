@@ -30,26 +30,31 @@ BPF_TABLE("hash", pid_t, struct proc_counter_t, usurpers, 1024);
 BPF_TABLE("hash", pid_t, struct scheduled_out_state_t, scheduled_out_states, 1024);
 
 int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
+    int pid_to_record = %d;
+    int should_track_usurpers = %d;
 
     pid_t prev_pid = prev->pid;
     pid_t parent_pid = prev->parent->pid;
     pid_t incoming_pid = bpf_get_current_pid_tgid();
     // TODO need parent pid - current()?
-    // pid_t current_parent_pid = bpf_get_current_task()->parent->pid;
-    
-    int pid_to_record = %d;
-    
-    struct proc_counter_t *counter = usurpers.lookup(&incoming_pid);
-    if (counter == 0) {
-        struct proc_counter_t new_counter = {.proc_name = NULL, .count = 0};
-        bpf_get_current_comm(&new_counter.proc_name, sizeof(new_counter.proc_name));
-        counter = &new_counter;
-        usurpers.update(&incoming_pid, counter);
+    if (should_track_usurpers) {
+        struct task_struct *task;
+        task = (struct task_struct *)bpf_get_current_task();
+        pid_t current_parent_pid = task->parent->pid;
+        
+        
+        struct proc_counter_t *counter = usurpers.lookup(&incoming_pid);
+        if (counter == 0) {
+            struct proc_counter_t new_counter = {.proc_name = NULL, .count = 0};
+            bpf_get_current_comm(&new_counter.proc_name, sizeof(new_counter.proc_name));
+            counter = &new_counter;
+            usurpers.update(&incoming_pid, counter);
+        }
+        if (prev->state == 0) {
+            counter->count++;
+        }
     }
-    if (prev->state == 0) {
-        counter->count++;
-    }
-
+    
     struct scheduled_out_state_t *states = scheduled_out_states.lookup(&prev_pid);
     if (states == 0) {
         struct scheduled_out_state_t new_state = {.running = 0, .sleeping = 0, .uninterruptible = 0, .unknown = 0};
@@ -71,7 +76,9 @@ int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
 };
 """
 
-b = BPF(text=prog % (int(sys.argv[1])))
+SHOULD_TRACK_USURPERS = 0
+
+b = BPF(text=prog % (int(sys.argv[1]), SHOULD_TRACK_USURPERS))
 b.attach_kprobe(event="finish_task_switch", fn_name="trace_finish_task_switch")
 
 time.sleep(int(sys.argv[2]))

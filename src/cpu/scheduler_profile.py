@@ -12,11 +12,9 @@ def write_svg_header(writer, width, height):
         '<?xml version="1.0" standalone="no"?>' +
         '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">')
     writer.write(
-        '<svg version="1.1" width="' + str(width) + '" height="' + str(height) + '" ' +
-        'xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n')
+        '<svg version="1.1" width="' + str(width) + '" height="' + str(height) + '" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n')
     writer.write(
-        '<text text-anchor="middle" x="{}" y="30" font-size="20" font-family="monospace" ' +
-        'fill="#000">Thread scheduling states</text>'.format(width / 2))
+        '<text text-anchor="middle" x="{}" y="30" font-size="20" font-family="monospace" fill="#000">Thread scheduling states</text>'.format(width / 2))
 
 
 def write_svg_footer(writer):
@@ -43,8 +41,7 @@ def write_cell(writer, x_offset, y_offset, width, height, state, thread_name, co
     cell_text = '{}/{} ({:.2f}%)'.format(thread_name, state, state_percentage)
     writer.write('<g><title>{}</title>'.format(cell_text))
     writer.write(
-        '<rect x="{}" y="{}" width="{}" height="{}" style="fill: {}; stroke:{}">'.format(x_offset, y_offset, width,
-                                                                                         get_stroke(state)))
+        '<rect x="{}" y="{}" width="{}" height="{}" style="fill: {}; stroke:{}">'.format(x_offset, y_offset, width, height, get_fill(state), get_stroke(state)))
     writer.write('</rect>\n')
     if not text_written:
         writer.write(
@@ -57,13 +54,13 @@ def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, p
     writer = open('scheduler-profile-{}.svg'.format(process_id), 'w')
     write_svg_header(writer, width, height)
 
-    row_height = float(height / len(thread_scheduling))
-
+    row_height = float((height - 60) / len(thread_scheduling))
+    border = 10
     y_offset = 50
     for tid in sorted(thread_scheduling.iterkeys()):
-        x_offset = 0
+        x_offset = border
         tid_sample_count = thread_scheduling[tid]['total']
-        single_sample_width = float(width / float(thread_scheduling[tid]['total']))
+        single_sample_width = float((width - (2 * border)) / float(thread_scheduling[tid]['total']))
         text_written = False
         for state in ['S', 'R', 'D', 'U']:
             sample_count = thread_scheduling[tid][state]
