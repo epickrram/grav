@@ -6,10 +6,17 @@ import sys
 STATE_COLOURS = {'S': '#acff90', 'R': '#ffaeae', 'D': '#fce94f', 'U': '#ccc'}
 STROKE_COLOURS = {'S': '#679657', 'R': '#b07979', 'D': '#b3a639', 'U': '#aaa'}
 
+
 def write_svg_header(writer, width, height):
-    writer.write('<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">')
-    writer.write('<svg version="1.1" width="' + str(width) + '" height="' + str(height) + '"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n')
-    writer.write('<text text-anchor="middle" x="{}" y="30" font-size="20" font-family="monospace" fill="#000">Thread scheduling states</text>'.format(width / 2))
+    writer.write(
+        '<?xml version="1.0" standalone="no"?>' +
+        '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">')
+    writer.write(
+        '<svg version="1.1" width="' + str(width) + '" height="' + str(height) + '" ' +
+        'xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n')
+    writer.write(
+        '<text text-anchor="middle" x="{}" y="30" font-size="20" font-family="monospace" ' +
+        'fill="#000">Thread scheduling states</text>'.format(width / 2))
 
 
 def write_svg_footer(writer):
@@ -35,10 +42,14 @@ def write_cell(writer, x_offset, y_offset, width, height, state, thread_name, co
     state_percentage = 100 * (count / float(total))
     cell_text = '{}/{} ({:.2f}%)'.format(thread_name, state, state_percentage)
     writer.write('<g><title>{}</title>'.format(cell_text))
-    writer.write('<rect x="{}" y="{}" width="{}" height="{}" style="fill: {}; stroke:{}">'.format(x_offset, y_offset, width, height, get_fill(state), get_stroke(state)))
+    writer.write(
+        '<rect x="{}" y="{}" width="{}" height="{}" style="fill: {}; stroke:{}">'.format(x_offset, y_offset, width,
+                                                                                         get_stroke(state)))
     writer.write('</rect>\n')
     if not text_written:
-        writer.write('<text x="{}" y="{}" width="{}" font-size="12" font-family="monospace" fill="#000">{}</text>'.format(x_offset, y_offset + 12, width, cell_text))
+        writer.write(
+            '<text x="{}" y="{}" width="{}" font-size="12" font-family="monospace" fill="#000">{}</text>'.format(
+                x_offset, y_offset + 12, width, cell_text))
     writer.write('</g>\n')
 
 
@@ -59,7 +70,8 @@ def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, p
 
             if sample_count > 0:
                 state_width = sample_count * single_sample_width
-                write_cell(writer, x_offset, y_offset, state_width, row_height, state, tid_to_thread_name[tid], sample_count, tid_sample_count, text_written)
+                write_cell(writer, x_offset, y_offset, state_width, row_height, state, tid_to_thread_name[tid],
+                           sample_count, tid_sample_count, text_written)
                 x_offset += state_width
                 text_written = True
         y_offset += row_height
