@@ -9,6 +9,9 @@ if len(sys.argv) < 3:
     print("Usage: %s <pid> <duration-seconds>" % (sys.argv[0]))
     sys.exit(1)
 
+# Task states taken from http://lxr.free-electrons.com/source/include/linux/sched.h?v=4.4#L207
+# Character codes taken from http://lxr.free-electrons.com/source/include/trace/events/sched.h?v=4.4#L155
+
 prog="""
 #include <linux/types.h>
 #include <linux/sched.h>
@@ -19,6 +22,10 @@ struct scheduled_out_state_t {
     int sleeping;
     int uninterruptible;
     int unknown;
+    int dead;
+    int wake_kill;
+    int unknown_state_0;
+    int total;
 };
 
 struct proc_counter_t {
@@ -62,14 +69,21 @@ int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
         scheduled_out_states.update(&prev_pid, states);
     }
     
+    // TODO consider switch statement
+    states->total++;
     if (prev->state == 0) {
         states->running++; 
     } else if (prev->state == 1) {
         states->sleeping++;
     } else if (prev->state == 2) {
         states->uninterruptible++;
+    } else if ((prev->state | 64) != 0) {
+        states->dead++;
+    } else if ((prev->state | 128) != 0) {
+        states->wake_kill++;
     } else {
         states->unknown++;
+        states->unknown_state_0 = prev->state;
     }
 
     return 0;
@@ -89,8 +103,12 @@ for k,v in b["scheduled_out_states"].iteritems():
     tid_stats['R'] = v.running
     tid_stats['S'] = v.sleeping
     tid_stats['D'] = v.uninterruptible
+    tid_stats['x'] = v.dead
+    tid_stats['K'] = v.wake_kill
     tid_stats['U'] = v.unknown
-    total = v.running + v.sleeping + v.uninterruptible + v.unknown
+    if v.unknown_state_0 != 0:
+        print str(v.unknown_state_0)
+    total = v.total
     tid_stats['total'] = total
     if total != 0:
         scheduling_states[int(k.value)] = tid_stats

@@ -3,9 +3,9 @@
 import json
 import sys
 
-STATE_COLOURS = {'S': '#acff90', 'R': '#ffaeae', 'D': '#fce94f', 'U': '#ccc'}
-STROKE_COLOURS = {'S': '#679657', 'R': '#b07979', 'D': '#b3a639', 'U': '#aaa'}
-
+STATE_COLOURS = {'S': '#acff90', 'R': '#ffaeae', 'D': '#fce94f', 'K': '#c00', 'x': '#0c0', 'U': '#ccc'}
+STROKE_COLOURS = {'S': '#679657', 'R': '#b07979', 'D': '#b3a639', 'K': '#600', 'x': '#060', 'U': '#aaa'}
+STATE_DESCRIPTORS = {'S': 'Sleeping', 'R': 'Runnable', 'D': 'Blocked I/O', 'K': 'Killed', 'x': 'Dead'}
 
 def write_svg_header(writer, width, height):
     writer.write(
@@ -36,9 +36,15 @@ def get_stroke(state):
     return STROKE_COLOURS[state]
 
 
+def get_state_description(state):
+    if state not in STATE_DESCRIPTORS:
+        return 'Other'
+    return STATE_DESCRIPTORS[state]
+
+
 def write_cell(writer, x_offset, y_offset, width, height, state, thread_name, count, total, text_written):
     state_percentage = 100 * (count / float(total))
-    cell_text = '{}/{} ({:.2f}%)'.format(thread_name, state, state_percentage)
+    cell_text = '{}/{} ({:.2f}%)'.format(thread_name, get_state_description(state), state_percentage)
     writer.write('<g><title>{}</title>'.format(cell_text))
     writer.write(
         '<rect x="{}" y="{}" width="{}" height="{}" style="fill: {}; stroke:{}">'.format(x_offset, y_offset, width, height, get_fill(state), get_stroke(state)))
@@ -62,7 +68,7 @@ def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, p
         tid_sample_count = thread_scheduling[tid]['total']
         single_sample_width = float((width - (2 * border)) / float(thread_scheduling[tid]['total']))
         text_written = False
-        for state in ['S', 'R', 'D', 'U']:
+        for state in ['S', 'R', 'D', 'U', 'x', 'K']:
             sample_count = thread_scheduling[tid][state]
 
             if sample_count > 0:
