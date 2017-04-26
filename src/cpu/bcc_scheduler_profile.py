@@ -43,12 +43,11 @@ int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
     pid_t prev_pid = prev->pid;
     pid_t parent_pid = prev->parent->pid;
     pid_t incoming_pid = bpf_get_current_pid_tgid();
-    // TODO need parent pid - current()?
+    // only works on newer kernels (e.g. 4.10)
     if (should_track_usurpers) {
         struct task_struct *task;
         task = (struct task_struct *)bpf_get_current_task();
         pid_t current_parent_pid = task->parent->pid;
-        
         
         struct proc_counter_t *counter = usurpers.lookup(&incoming_pid);
         if (counter == 0) {

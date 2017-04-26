@@ -27,8 +27,6 @@ def init_colours():
     lighter.reverse()
     darker.reverse()
 
-    print len(lighter)
-
     return [lighter, darker]
 
 def get_cpu_tenancy_count_by_tid():
@@ -102,8 +100,15 @@ def write_cell(writer, x_offset, y_offset, width, height, cpu_id, tid, percentag
     writer.write('<text x="{}" y="{}" width="{}" font-size="12" font-family="monospace" style="text-overflow: clip" fill="#000">{}</text>'.format(x_offset, y_offset + 22, width, "CPU{}".format(cpu_id)))
     writer.write('</g>\n')
 
-def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name, process_id):
-    writer = open('cpu-tenancy-{}.svg'.format(process_id), 'w')
+def write_svg(width, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name, process_id):
+    filename = 'cpu-tenancy-{}.svg'.format(process_id)
+    writer = open(filename, 'w')
+
+    height = 660
+    row_height = height / len(cpu_tenancy_by_pid[int(process_id)])
+    if row_height < 35:
+        height = (len(cpu_tenancy_by_pid[int(process_id)]) * 35) + 60
+
     write_svg_header(writer, width, height)
 
     row_height = float((height - 60) / calculate_number_of_columns(cpu_tenancy_by_pid))
@@ -135,6 +140,8 @@ def write_svg(width, height, cpu_tenancy_by_pid, max_sample_count, tid_to_thread
     write_svg_footer(writer)
     writer.close()
 
+    print "Wrote {}".format(filename)
+
 def get_tid_to_thread_name(jstack_file):
     tid_to_thread_name = dict()
     for line in open(jstack_file):
@@ -150,9 +157,8 @@ def get_tid_to_thread_name(jstack_file):
 
 
 if __name__ == "__main__":
-    # TODO min height ~25
     process_id = sys.argv[1]
     tid_to_thread_name = get_tid_to_thread_name(sys.argv[2])
     cpu_tenancy_by_pid, max_sample_count = get_cpu_tenancy_count_by_tid()
 
-    write_svg(1200, 660, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name, process_id)
+    write_svg(1200, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name, process_id)

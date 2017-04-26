@@ -14,8 +14,10 @@ fi
 
 source $SCRIPT_DIR/options.sh
 JSTACK_FILE="$PERF_DATA_DIR/jstack-$PID.txt"
-echo "starting $PERF_DATA_FILE"
 jstack "$PID" > $JSTACK_FILE
+
+echo "Recording samples.."
+
 sudo perf record -F "$PERF_SAMPLE_FREQUENCY" -o "$PERF_DATA_FILE" -e cycles -a -- sleep "$PERF_RECORD_DURATION"
 sudo perf script -i "$PERF_DATA_FILE" -F comm,pid,tid,cpu,time,event | grep -E "\s+$PID" > "$PERF_SCRIPT_FILE"
 

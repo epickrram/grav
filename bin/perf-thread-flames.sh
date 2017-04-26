@@ -19,5 +19,5 @@ $PERF_MAP_AGENT_DIR/bin/perf-java-record-stack $*
 sudo perf script -i $PERF_DATA_FILE > $STACKS
 $FLAMEGRAPH_DIR/stackcollapse-perf.pl $PERF_COLLAPSE_OPTS $STACKS > $COLLAPSED
 python $GRAV_DIR/src/flames/convert_tid_stacks.py $JSTACKS $COLLAPSED $COLLAPSED_WITH_THREADS
-cat $COLLAPSED_WITH_THREADS | $FLAMEGRAPH_DIR/flamegraph.pl $PERF_FLAME_OPTS > $PERF_FLAME_OUTPUT
-
+cat $COLLAPSED_WITH_THREADS | $FLAMEGRAPH_DIR/flamegraph.pl $PERF_FLAME_OPTS > $PERF_FLAME_OUTPUT && \
+echo "Wrote $PERF_FLAME_OUTPUT"
