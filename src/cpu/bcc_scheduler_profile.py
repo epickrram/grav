@@ -114,11 +114,13 @@ for k,v in b["scheduled_out_states"].iteritems():
 
 json.dump(scheduling_states, open(sys.argv[3], 'w'))
 
-contending_commands = dict()
-for k, v in b["usurpers"].iteritems():
-    key = v.proc_name # + "/" + str(k.value)
-    if key not in contending_commands:
-        contending_commands[key] = 0
-    contending_commands[key] += 1
+if SHOULD_TRACK_USURPERS == 1:
+    # TODO add parent pid to record
+    contending_commands = dict()
+    for k, v in b["usurpers"].iteritems():
+        key = v.proc_name + "/" + str(k.value)
+        if key not in contending_commands:
+            contending_commands[key] = 0
+        contending_commands[key] += 1
 
-json.dump(contending_commands, open(sys.argv[4], 'w'))
+    json.dump(contending_commands, open(sys.argv[4], 'w'))
