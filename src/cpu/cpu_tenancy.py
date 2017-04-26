@@ -12,8 +12,6 @@ def init_colours():
     r = 128
     g = 94
     b = 64
-    # use top +- 64
-    # gives 128 in each domain
     delta = 16
     while r < 200:
         g = 92
@@ -70,24 +68,23 @@ def get_cpu_tenancy_count_by_tid():
 
     return (pid_map, max_sample_count)
 
+
 def write_svg_header(writer, width, height):
     writer.write('<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">')
     writer.write('<svg version="1.1" width="' + str(width) + '" height="' + str(height) + '"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n')
     writer.write(
         '<text text-anchor="middle" x="{}" y="30" font-size="20" font-family="monospace" fill="#000">Thread CPU tenancy</text>'.format(width / 2))
 
+
 def write_svg_footer(writer):
     writer.write('</svg>\n')
+
 
 def calculate_number_of_columns(cpu_tenancy_by_pid):
     column_count = 0
     for pid in cpu_tenancy_by_pid:
         column_count += len(cpu_tenancy_by_pid[pid])
     return column_count
-
-def get_fill(cpu_id):
-    # TODO support 256 cpus
-    return CPU_COLOURS[cpu_id % len(CPU_COLOURS)]
 
 
 def overlay_thread_name(writer, x_offset, y_offset, thread_name):
