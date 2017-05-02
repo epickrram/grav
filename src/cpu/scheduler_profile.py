@@ -57,7 +57,8 @@ def write_cell(writer, x_offset, y_offset, width, height, state, thread_name, co
 
 
 def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, process_id):
-    writer = open('scheduler-profile-{}.svg'.format(process_id), 'w')
+    output_filename = 'scheduler-profile-{}.svg'.format(process_id)
+    writer = open(output_filename, 'w')
     write_svg_header(writer, width, height)
 
     row_height = float((height - 60) / len(thread_scheduling))
@@ -81,6 +82,7 @@ def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, p
 
     write_svg_footer(writer)
     writer.close()
+    print "Wrote {}".format(output_filename)
 
 
 def get_tid_to_thread_name(jstack_file):

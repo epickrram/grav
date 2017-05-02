@@ -21,7 +21,7 @@ def replace_tids_with_names(collapsed_stack_file, output_file, tid_to_thread_nam
     for line in open(collapsed_stack_file):
         try:
             for tid in tid_to_thread_name:
-                line = line.replace(";" + str(tid), ";" + tid_to_thread_name[tid])
+                line = line.replace("/" + str(tid) + ";", "/" + tid_to_thread_name[tid] + ";")
             out.write(line)
         except ValueError:
             print "Failed to parse pid from line: " + line
