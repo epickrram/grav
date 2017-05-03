@@ -24,7 +24,7 @@ Determine whether application threads would be better restricted to a certain se
 
 ![CPU Tenancy](https://github.com/epickrram/blog-images/raw/master/2017_04/cpu-tenancy.png)
 
-Pre-requisites: install [perf_events](https://perf_events)
+Pre-requisites: install [perf_events](https://perf.wiki.kernel.org/index.php/Main_Page)
 
 Usage:
 
@@ -40,7 +40,7 @@ Annotate JVM flamegraphs with thread names for easier focus.
 
 Pre-requisites: the following repositories need to be cloned and available locally:
 
-   * [perf-map-agent](https://github.com/jvm-perf-tools/perf-map-agent)
+   * [perf-map-agent](https://github.com/jvm-profiling-tools/perf-map-agent)
    * [flamegraph](https://github.com/brendangregg/Flamegraph)
 
 Usage:
