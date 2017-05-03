@@ -1,6 +1,6 @@
 # grav
 
-## Performance visualisation tools
+A collection of tools to help visualise process execution.
 
 ### Scheduler profile
 
@@ -38,6 +38,8 @@ Wrote cpu-tenancy-$PID.svg
 
 Annotate JVM flamegraphs with thread names for easier focus.
 
+![Named threads](https://github.com/epickrram/blog-images/raw/master/2017_04/gc_threads_flamegraph.png)
+
 Pre-requisites: the following repositories need to be cloned and available locally:
 
    * [perf-map-agent](https://github.com/jvm-profiling-tools/perf-map-agent)
@@ -55,3 +57,18 @@ Recording events for 15 seconds (adapt by setting PERF_RECORD_SECONDS)
 [ perf record: Captured and wrote 0.343 MB /tmp/perf-$PID.data (835 samples) ]
 Wrote flamegraph-$PID.svg
 ```
+
+To filter out particular threads, supply a regex as the second argument:
+
+```
+$ ./bin/perf-thread-flames.sh $PID ".*GC.*"
+Capturing stacks for threads matching '.*GC.*'
+Recording events for 15 seconds (adapt by setting PERF_RECORD_SECONDS)
+[ perf record: Woken up 7 times to write data ]
+[ perf record: Captured and wrote 1.026 MB /tmp/perf-$PID.data (496 samples) ]
+Wrote flamegraph-$PID.svg
+```
+
+### Maintainer
+
+[Mark Price](https://github.com/epickrram)
