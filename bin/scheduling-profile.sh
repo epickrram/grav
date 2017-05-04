@@ -12,6 +12,8 @@ if [[ "$PID" == "" ]]; then
     exit 1
 fi
 
+# TODO check /proc/$PID/comm - if not 'java', don't run jstack
+
 source $SCRIPT_DIR/options.sh
 JSTACK_FILE="$PERF_DATA_DIR/jstack-$PID.txt"
 jstack "$PID" > $JSTACK_FILE

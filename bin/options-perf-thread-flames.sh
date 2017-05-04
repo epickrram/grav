@@ -10,6 +10,7 @@ JSTACKS=$PERF_JAVA_TMP/out-$PID.jstacks
 COLLAPSED=$PERF_JAVA_TMP/out-$PID.collapsed
 COLLAPSED_WITH_THREADS=$PERF_JAVA_TMP/out-threads-$PID.collapsed
 GRAV_DIR=$(dirname $(readlink -f $0))/..
+AGGREGATE_ON_THREAD_PREFIX="False"
 
 if [ "${PERF_DATA_FILE:-}" == "" ]; then
     PERF_DATA_FILE=$PERF_JAVA_TMP/perf-$PID.data
