@@ -12,11 +12,21 @@ if [[ "$PID" == "" ]]; then
     exit 1
 fi
 
-# TODO check /proc/$PID/comm - if not 'java', don't run jstack
 
 source $SCRIPT_DIR/options.sh
-JSTACK_FILE="$PERF_DATA_DIR/jstack-$PID.txt"
-jstack "$PID" > $JSTACK_FILE
+source $SCRIPT_DIR/functions.sh
+
+export PID
+
+check_command_contains_java
+
+if [[ "$COMMAND_CONTAINS_JAVA" != "" ]]; then
+    JSTACK_FILE="$PERF_DATA_DIR/jstack-$PID.txt"
+    jstack "$PID" > $JSTACK_FILE
+else
+    JSTACK_FILE="/dev/null"
+fi
+
 
 echo "Recording scheduling information for $PERF_RECORD_DURATION seconds"
 

@@ -117,4 +117,7 @@ if __name__ == "__main__":
     process_id = sys.argv[2]
     thread_scheduling = json.load(sys.stdin)
     filtered_scheduling, max_total = filter_scheduler_info(thread_scheduling, tid_to_thread_name)
-    write_svg(1200, 660, filtered_scheduling, max_total, tid_to_thread_name, process_id)
+    if len(filtered_scheduling) == 0:
+        print "No samples for pid {}".format(process_id)
+    else:
+        write_svg(1200, 660, filtered_scheduling, max_total, tid_to_thread_name, process_id)

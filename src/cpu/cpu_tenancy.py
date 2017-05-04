@@ -124,7 +124,7 @@ def write_svg(width, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name, p
         for tid in sorted(cpu_tenancy_by_pid[pid].iterkeys()):
             cpu_sample_count = cpu_tenancy_by_pid[pid][tid]
             x_offset = 20
-            thread_name = "unknown/" + str(tid)
+            thread_name = str(tid)
             if tid in tid_to_thread_name:
                 thread_name = tid_to_thread_name[tid]
             for cpu_id in sorted(cpu_sample_count.iterkeys()):
