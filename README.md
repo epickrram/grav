@@ -69,6 +69,58 @@ Recording events for 15 seconds (adapt by setting PERF_RECORD_SECONDS)
 Wrote flamegraph-$PID.svg
 ```
 
+### vagrant-grav
+
+A Vagrant box that can be used as a grav development environment on non-linux machines.
+
+Pre-requisite: 
+ - [vagrant](https://www.vagrantup.com/)
+
+Usage:
+```
+$ cd vagrant-grav
+$ vagrant up
+```
+
+will run a vagrant box with:
+1. ubuntu trusty64
+1. Java OpenJDK8
+1. perf
+1. [perf-map-agent](https://github.com/jvm-profiling-tools/perf-map-agent)
+1. [FlameGraph](https://github.com/brendangregg/Flamegraph) scripts
+1. grav scripts
+
+```
+$ vagrant ssh 
+...
+vagrant@vagrant-ubuntu-trusty-64:~$ echo $JAVA_HOME
+/usr/lib/jvm/java-8-openjdk-amd64/
+vagrant@vagrant-ubuntu-trusty-64:~$ echo $GRAV_DIR
+/vagrant/grav
+vagrant@vagrant-ubuntu-trusty-64:~$ echo $FLAMEGRAPH_DIR
+/vagrant/FlameGraph
+vagrant@vagrant-ubuntu-trusty-64:~$ echo $PERF_MAP_AGENT_DIR
+/vagrant/perf-map-agent
+```
+
+The VM is now ready for grav development.
+```
+vagrant@vagrant-ubuntu-trusty-64:~$ logout
+Connection to 127.0.0.1 closed.
+$ vagrant port
+The forwarded ports for the machine are listed below. Please note that
+these values may differ from values configured in the Vagrantfile if the
+provider supports automatic port collision detection and resolution.
+
+    22 (guest) => 2200 (host)
+  8080 (guest) => 18080 (host)
+```
+ Forwarded port 8080 to port 18080 to allow access to a server running inside the box.
+ 
+
 ### Maintainer
 
 [Mark Price](https://github.com/epickrram)
+
+[Amir Langer](https://github.com/langera)
+
