@@ -118,7 +118,7 @@ provider supports automatic port collision detection and resolution.
  Forwarded port 8080 to port 18080 to allow access to a server running inside the box.
  
 
-### Maintainer
+### Maintainers
 
 [Mark Price](https://github.com/epickrram)
 
