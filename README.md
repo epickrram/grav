@@ -2,6 +2,8 @@
 
 A collection of tools to help visualise process execution.
 
+This [blog post](https://epickrram.blogspot.co.uk/2017/05/performance-visualisation-tools.html) has some detail on the rationale and implementation detail.
+
 ### Scheduler profile
 
 Visual cues to inform whether your application's threads are being pre-empted by the kernel scheduler before they are ready to yield the processor.
