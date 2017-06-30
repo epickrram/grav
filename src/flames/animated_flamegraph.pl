@@ -332,10 +332,44 @@ SVG
 			if ($x1Diff != 0) {
 				$self->{svg} .= qq/<animateTransform type="translate" attributeName="transform" from="0 0" to="$x1Diff 0" dur="${duration}s" fill="freeze" additive="sum" begin="${begin}"\/>\n/; 
 			}
+#			if ($x1 == 0) {
+#				$self->{svg} .= qq/<animate  attributeName="opacity" from="1" to="0" dur="${duration}s" fill="freeze" additive="sum" begin="${begin}"\/>\n/; 				
+#			}
 			$oldx1 = $x1;
 #			$begin =  "$animateId.end+2s";
 		}
 	}
+
+	sub array_min {
+		my ($arrRef) = @_;
+		my @arr = @{$arrRef};
+		my $j = 0;
+		my $result;
+		for my $value (@arr) {
+		  $result = $value if !defined $result or $value < $result;
+		}	
+		return $result;
+	}
+
+
+	sub rectangleText {
+		my ($self, $func, $dRef, $color, $font, $size, $angle, $x, $y, $loc, $extra) = @_;
+		my @d = @{ $dRef };
+		my $chars = int( (array_min(\@d) * $widthpertime) / ($fontsize * $fontwidth));
+		my $text = "";
+		if ($chars >= 3) { # room for one char plus two dots
+		$func =~ s/_\[[kwi]\]$//;	# strip any annotation
+			$text = substr $func, 0, $chars;
+			substr($text, -2, 2) = ".." if $chars < length $func;
+			$text =~ s/&/&amp;/g;
+			$text =~ s/</&lt;/g;
+			$text =~ s/>/&gt;/g;
+		}
+		$x = sprintf "%0.2f", $x;
+		$loc = defined $loc ? $loc : "left";
+		$extra = defined $extra ? $extra : "";
+		$self->{svg} .= qq/<text text-anchor="$loc" x="$x" y="$y" font-size="$size" font-family="$font" fill="$color" $extra >$text<\/text>\n/;
+	} 
 
 	sub stringTTF {
 		my ($self, $color, $font, $size, $angle, $x, $y, $str, $loc, $extra) = @_;
@@ -577,17 +611,6 @@ sub calculate_stime {
 	return @stime;
 }
 
-sub array_min {
-	my ($arrRef) = @_;
-	my @arr = @{$arrRef};
-	my $j = 0;
-	my $result;
-	for my $value (@arr) {
-	  $result = $value if !defined $result or $value < $result;
-	}	
-	return $result;
-}
-
 sub array_sum {
 	my ($arr1Ref, $arr2Ref) = @_;
 	my @arr1 = @{$arr1Ref};
@@ -731,11 +754,17 @@ unless ($time) {
 	exit 2;
 }
 
+my @alldeltas;
+
 # calculate timemax as max of all seen values
 while (my ($id, $node) = each %Node) {
 	my @d = @{$node->{delta} // []};
 	for (@d) {
 		$timemax = $_ if !$timemax || $_ > $timemax;
+	}
+
+	if ($id =~ /;0;/) {
+		@alldeltas = @d;
 	}
 }
 
@@ -1122,19 +1151,26 @@ while (my ($id, $node) = each %Node) {
 
 #print "func $func  depth $depth -  stime  @stime  delta @d \n";
 
-	my $samples = sprintf "%.0f", ($d[0]) * $factor;
-	(my $samples_txt = $samples) # add commas per perlfaq5
-		=~ s/(^[-+]?\d+?(?=(?>(?:\d{3})+)(?!\d))|\G\d{3}(?=\d))/$1,/g;
+	my $samples_txt = "";
+	my $i = 0;
+	for (; $i < scalar @d; $i++) {
+		my $samples = sprintf "%.0f", $d[$i] * $factor;
+
+		($samples_txt .= $samples) # add commas per perlfaq5
+			=~ s/(^[-+]?\d+?(?=(?>(?:\d{3})+)(?!\d))|\G\d{3}(?=\d))/$1,/g;
+
+		my $pct = sprintf "%.2f", ((100 * $samples) / ($alldeltas[$i] * $factor));
+		$samples_txt .= "($pct%) "
+	}
 
 	my $info;
 	if ($func eq "" and $depth == 0) {
 		$info = "all ($samples_txt $countname, 100%)";
-		my $i;
-		for ($i=0; $i < scalar @d; $i++) {
-			$d[$i] = $timemax;
-		}
+#		my $i;
+#		for ($i=0; $i < scalar @d; $i++) {
+#			$d[$i] = $timemax;
+#		}
 	} else {
-		my $pct = sprintf "%.2f", ((100 * $samples) / ($timemax * $factor));
 		my $escaped_func = $func;
 		# clean up SVG breaking characters:
 		$escaped_func =~ s/&/&amp;/g;
@@ -1143,7 +1179,7 @@ while (my ($id, $node) = each %Node) {
 		$escaped_func =~ s/"/&quot;/g;
 		$escaped_func =~ s/_\[[kwi]\]$//;	# strip any annotation
 #		unless (defined $samples) {
-		$info = "$escaped_func ($samples_txt $countname, $pct%)";
+		$info = "$escaped_func $samples_txt $countname";
 #		} else {
 #			my $d = $negate ? -$d : $d;
 #			my $deltapct = sprintf "%.2f", ((100 * $d) / ($timemax * $factor));
@@ -1188,18 +1224,7 @@ while (my ($id, $node) = each %Node) {
 
 	$im->animateX1($x1, $x2, \@d, \@stime);
 
-	my $chars = int( (array_min(\@d) * $widthpertime) / ($fontsize * $fontwidth));
-	my $text = "";
-	if ($chars >= 3) { # room for one char plus two dots
-		$func =~ s/_\[[kwi]\]$//;	# strip any annotation
-		$text = substr $func, 0, $chars;
-		substr($text, -2, 2) = ".." if $chars < length $func;
-		$text =~ s/&/&amp;/g;
-		$text =~ s/</&lt;/g;
-		$text =~ s/>/&gt;/g;
-	}
-
-	$im->stringTTF($black, $fonttype, $fontsize, 0.0, $x1 + 3, 3 + ($y1 + $y2) / 2, $text, "");
+	$im->rectangleText($func, \@d, $black, $fonttype, $fontsize, 0.0, $x1 + 3, 3 + ($y1 + $y2) / 2, "");
 
 	$im->group_end($nameattr);
 }
