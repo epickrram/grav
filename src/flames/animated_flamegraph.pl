@@ -1,80 +1,19 @@
 #!/usr/bin/perl -w
 #
-# flamegraph.pl		flame stack grapher.
 #
-# This takes stack samples and renders a call graph, allowing hot functions
-# and codepaths to be quickly identified.  Stack samples can be generated using
-# tools such as DTrace, perf, SystemTap, and Instruments.
+# modified version of flamegraph.pl
 #
-# USAGE: ./flamegraph.pl [options] input.txt > graph.svg
+# see:
+# https://github.com/brendangregg/FlameGraph/blob/master/flamegraph.pl
 #
-#        grep funcA input.txt | ./flamegraph.pl [options] > graph.svg
 #
-# Then open the resulting .svg in a web browser, for interactivity: mouse-over
-# frames for info, click to zoom, and ctrl-F to search.
+# USAGE: ./animated_flamegraph.pl [options] input.txt > graph.svg
 #
-# Options are listed in the usage message (--help).
+#        grep funcA input.txt | ./animated_flamegraph.pl [options] > graph.svg
 #
-# The input is stack frames and sample counts formatted as single lines.  Each
-# frame in the stack is semicolon separated, with a space and count at the end
-# of the line.  These can be generated using DTrace with stackcollapse.pl,
-# and other tools using the stackcollapse variants.
 #
-# An optional extra column of counts can be provided to generate a differential
-# flame graph of the counts, colored red for more, and blue for less.  This
-# can be useful when using flame graphs for non-regression testing.
-# See the header comment in the difffolded.pl program for instructions.
+# Modified by Amir Langer to add SVG animation elements to capture stack traces change over time.
 #
-# The output graph shows relative presence of functions in stack samples.  The
-# ordering on the x-axis has no meaning; since the data is samples, time order
-# of events is not known.  The order used sorts function names alphabetically.
-#
-# While intended to process stack samples, this can also process stack traces.
-# For example, tracing stacks for memory allocation, or resource usage.  You
-# can use --title to set the title to reflect the content, and --countname
-# to change "samples" to "bytes" etc.
-#
-# There are a few different palettes, selectable using --color.  By default,
-# the colors are selected at random (except for differentials).  Functions
-# called "-" will be printed gray, which can be used for stack separators (eg,
-# between user and kernel stacks).
-#
-# HISTORY
-#
-# This was inspired by Neelakanth Nadgir's excellent function_call_graph.rb
-# program, which visualized function entry and return trace events.  As Neel
-# wrote: "The output displayed is inspired by Roch's CallStackAnalyzer which
-# was in turn inspired by the work on vftrace by Jan Boerhout".  See:
-# https://blogs.oracle.com/realneel/entry/visualizing_callstacks_via_dtrace_and
-#
-# Copyright 2016 Netflix, Inc.
-# Copyright 2011 Joyent, Inc.  All rights reserved.
-# Copyright 2011 Brendan Gregg.  All rights reserved.
-#
-# CDDL HEADER START
-#
-# The contents of this file are subject to the terms of the
-# Common Development and Distribution License (the "License").
-# You may not use this file except in compliance with the License.
-#
-# You can obtain a copy of the license at docs/cddl1.txt or
-# http://opensource.org/licenses/CDDL-1.0.
-# See the License for the specific language governing permissions
-# and limitations under the License.
-#
-# When distributing Covered Code, include this CDDL HEADER in each
-# file and include the License file at docs/cddl1.txt.
-# If applicable, add the following below this CDDL HEADER, with the
-# fields enclosed by brackets "[]" replaced with your own identifying
-# information: Portions Copyright [yyyy] [name of copyright owner]
-#
-# CDDL HEADER END
-#
-# 11-Oct-2014	Adrien Mahieux	Added zoom.
-# 21-Nov-2013   Shawn Sterling  Added consistent palette file option
-# 17-Mar-2013   Tim Bunce       Added options and more tunables.
-# 15-Dec-2011	Dave Pacheco	Support for frames with whitespace.
-# 10-Sep-2011	Brendan Gregg	Created this.
 
 use strict;
 
