@@ -108,10 +108,9 @@ my $stackreverse = 0;           # reverse stack order, switching merge end
 my $duration = 10;              # duration of animation phase in seconds
 my $titletext = "";             # centered heading
 my $titledefault = "Flame Graph";	# overwritten by --title
-my $titleinverted = "Icicle Graph";	#   "    "
 my $searchcolor = "rgb(230,0,230)";	# color for search highlighting
 my $help = 0;
-my $initialDelay = 1;
+my $delay = 2;
 
 sub usage {
 	die <<USAGE_END;
@@ -130,8 +129,6 @@ USAGE: $0 [options] infile > outfile.svg\n
 	--hash        # colors are keyed by function name hash
 	--cp          # use consistent palette (palette.map)
 	--reverse     # generate stack-reversed flame graph
-	--inverted    # icicle graph
-	--negate      # switch differential hues (blue<->red)
 	--duration    # duration of animation phase in seconds
 	--help        # this message
 
@@ -158,8 +155,6 @@ GetOptions(
 	'hash'        => \$hash,
 	'cp'          => \$palette,
 	'reverse'     => \$stackreverse,
-#	'inverted'    => \$inverted,
-#	'negate'      => \$negate,
 	'duration'	  => \$duration,	
 	'help'        => \$help,
 ) or usage();
@@ -282,12 +277,16 @@ SVG
 		my $h = sprintf "%0.1f", $y2 - $y1;
 
 		$self->{svg} .= qq/<rect x="$x1" y="$y1" width="$w" height="$h" fill="$fill" rx="2" ry="2">\n/;
+
+#print "x1: $x1 w : $w\n";		
 	}
 
 	sub filledRectangleEnd {
 		my ($self) = @_;
 		$self->{svg} .= qq/<\/rect>/;		
 	}
+
+	my $animateIdPrefix = 0;
 
 	sub animateWidth {
 		my ($self, $x1, $x2, $dRef, $stimeRef) = @_;
@@ -305,13 +304,15 @@ SVG
 			#my $animateId = "$stime[$j];$y1;$j";
 			my $wDiff = ($oldw == 0) ? 1 : $w - $oldw;
 			$wDiff = sprintf "%0.1f", $wDiff;
-			my $begin = ($duration + $initialDelay) * $j;
+			#my $begin = ($duration + $delay) * $j;
 			if ($wDiff != 0) {
-					$self->{svg} .= qq/<animate attributeType="XML" attributeName="width" from="0" to="$wDiff" dur="${duration}s" fill="freeze" additive="sum" begin="${begin}s"\/>\n/; 
+					$self->{svg} .= qq/<animate id="a${animateIdPrefix}p$j" attributeType="XML" attributeName="width" from="0" to="$wDiff" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/; 
 			}
 			$oldw = $w;
 #			$begin =  "$animateId.end+2s";
+#print "$j wdiff : $wDiff\n";
 		}
+		$animateIdPrefix++;
 	}
 
 	sub animateX1 {
@@ -326,18 +327,17 @@ SVG
 			$x2 = $xpad + ($stime[$j] + $d[$j]) * $widthpertime;
 			$x1 = sprintf "%0.1f", $x1;
 			$x2 = sprintf "%0.1f", $x2;
-			my $begin = ($duration + $initialDelay) * $j;
+			#my $begin = ($duration + $delay) * $j;
 			#my $animateId = "$stime[$j];$y1;$j";
 			my $x1Diff = sprintf "%0.1f", $x1 - $oldx1;
 			if ($x1Diff != 0) {
-				$self->{svg} .= qq/<animateTransform type="translate" attributeName="transform" from="0 0" to="$x1Diff 0" dur="${duration}s" fill="freeze" additive="sum" begin="${begin}"\/>\n/; 
+				$self->{svg} .= qq/<animateTransform id="a${animateIdPrefix}p$j" type="translate" attributeName="transform" from="0 0" to="$x1Diff 0" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/; 
 			}
-#			if ($x1 == 0) {
-#				$self->{svg} .= qq/<animate  attributeName="opacity" from="1" to="0" dur="${duration}s" fill="freeze" additive="sum" begin="${begin}"\/>\n/; 				
-#			}
 			$oldx1 = $x1;
 #			$begin =  "$animateId.end+2s";
+#print "$j x1diff : $x1Diff\n";
 		}
+		$animateIdPrefix++;
 	}
 
 	sub array_min {
@@ -625,6 +625,7 @@ sub array_sum {
 	return @sum;
 }
 
+
 # flow() merges two stacks, storing the merged frames and value data in %Node.
 sub flow {
 	my ($last, $this, $v, @d) = @_;
@@ -770,7 +771,7 @@ while (my ($id, $node) = each %Node) {
 
 $widthpertime = ($imagewidth - 2 * $xpad) / $timemax;
 
-#print "MAX $timemax $imagewidth WPT $widthpertime\n";
+#print "MAX $timemax $imagewidth WPT $widthpertime  xpad $xpad\n";
 
 my $minwidth_time = $minwidth / $widthpertime;
 
@@ -805,13 +806,79 @@ my $inc = <<INC;
 </style>
 <script type="text/ecmascript">
 <![CDATA[
-	var details, searchbtn, matchedtxt, svg;
+	var details, searchbtn, animatebtn, matchedtxt, svg, title;
 	function init(evt) {
 		details = document.getElementById("details").firstChild;
 		searchbtn = document.getElementById("search");
+		animatebtn = document.getElementById("animation");
 		matchedtxt = document.getElementById("matched");
 		svg = document.getElementsByTagName("svg")[0];
+		title = document.getElementById("fgtitle");
 		searching = 0;
+		first_animation = 1;
+		animating = undefined;
+		initAnimateTagsMap(document.getElementsByTagName("animate"));
+		initAnimateTagsMap(document.getElementsByTagName("animateTransform"));
+	}
+
+	var animateTagsByPhaseMap = {};
+
+	function initAnimateTagsMap(animateTags) {
+		for(i = 0; i < animateTags.length; i++) {
+    		addAnimateTag(animateTags[i]);
+		}
+	}
+
+	function addAnimateTag(tag) {
+		var tagId = tag.getAttribute("id");
+		var rx = /a\\d+p(\\d+)/;
+  		var idResult = rx.exec(tagId);
+  		var phase = idResult[1];
+	    animateTagsByPhaseMap[phase] = animateTagsByPhaseMap[phase] || [];
+	    animateTagsByPhaseMap[phase].push(tag);
+	}
+
+	function animate_prompt() {
+		if (!animating) {
+			animating = 1;
+	    	setTimeout(function() { animate(); }, 1000);
+		} 
+	}
+
+	function animate() {
+		var size = Object.keys(animateTagsByPhaseMap).length;
+		if (animating < size) {
+			animatebtn.textContent = "" + animating;
+			setTimeout(function() {
+						startAnimation(animating++);
+						setTimeout(function() { 
+								animate(); 
+						}, ($duration + $delay) * 1000);
+			}, $delay * 1000);
+		}
+		else {
+			animatebtn.textContent = "";
+			animatebtn.style["opacity"] = "0";
+		}
+	}
+
+	function startAnimation(phase) {
+		var animateElements = animateTagsByPhaseMap[phase];
+		for(var i = 0; i < animateElements.length; i++){
+			animateElements[i].beginElement();
+		}
+	}
+
+	function animateover(e) {
+		animatebtn.style["opacity"] = "1.0";
+	}
+
+	function animateout(e) {
+		if (animating) {
+			animatebtn.style["opacity"] = "1.0";
+		} else {
+			animatebtn.style["opacity"] = "0.1";
+		}
 	}
 
 	// mouse-over for info
@@ -1128,13 +1195,16 @@ my ($white, $black, $vvdgrey, $vdgrey, $dgrey) = (
 	$im->colorAllocate(160, 160, 160),
 	$im->colorAllocate(200, 200, 200),
     );
-$im->stringTTF($black, $fonttype, $fontsize + 5, 0.0, int($imagewidth / 2), $fontsize * 2, $titletext, "middle");
+$im->stringTTF($black, $fonttype, $fontsize + 5, 0.0, int($imagewidth / 2), $fontsize * 2, $titletext, 'middle" id="fgtitle');
 $im->stringTTF($black, $fonttype, $fontsize, 0.0, $xpad, $imageheight - ($ypad2 / 2), " ", "", 'id="details"');
 $im->stringTTF($black, $fonttype, $fontsize, 0.0, $xpad, $fontsize * 2,
     "Reset Zoom", "", 'id="unzoom" onclick="unzoom()" style="opacity:0.0;cursor:pointer"');
-$im->stringTTF($black, $fonttype, $fontsize, 0.0, $imagewidth - $xpad - 100,
+$im->stringTTF($black, $fonttype, $fontsize, 0.0, $imagewidth - $xpad - 150,
     $fontsize * 2, "Search", "", 'id="search" onmouseover="searchover()" onmouseout="searchout()" onclick="search_prompt()" style="opacity:0.1;cursor:pointer"');
+$im->stringTTF($black, $fonttype, $fontsize, 0.0, $imagewidth - $xpad - 50,
+    $fontsize * 2, "Animate", "", 'id="animation" onmouseover="animateover()" onmouseout="animateout()" onclick="animate_prompt()" style="opacity:0.1;cursor:pointer"');
 $im->stringTTF($black, $fonttype, $fontsize, 0.0, $imagewidth - $xpad - 100, $imageheight - ($ypad2 / 2), " ", "", 'id="matched"');
+
 
 if ($palette) {
 	read_palette();
