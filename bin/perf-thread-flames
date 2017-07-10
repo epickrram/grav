@@ -19,7 +19,7 @@ fi
 source $SCRIPT_DIR/validate-perf-map-agent.sh
 source $SCRIPT_DIR/options-perf-thread-flames.sh
 
-jstack $1 > $JSTACKS
+jstack "$PID" > $JSTACKS
 $PERF_MAP_AGENT_DIR/bin/perf-java-record-stack "$PID"
 sudo perf script -i $PERF_DATA_FILE > $STACKS
 $FLAMEGRAPH_DIR/stackcollapse-perf.pl $PERF_COLLAPSE_OPTS $STACKS > $COLLAPSED
