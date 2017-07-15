@@ -37,7 +37,7 @@ def findCollapsedFiles(collapsed_files_dir):
 if __name__ == "__main__":
     argsLength = len(sys.argv)
     if (argsLength < 3 or argsLength > 4):
-        print("Usage: %s <collapsed file prefix> (<output file>)" % (sys.argv[0]))
+        print("Usage: %s <collapsed files dir> <collapsed file prefix> (<output file>)" % (sys.argv[0]))
         sys.exit(1)
 
     collapsed_files_dir = sys.argv[1]
