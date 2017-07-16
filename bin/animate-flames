@@ -28,6 +28,10 @@ if [ "${PERF_FLAME_OUTPUT:-}" == "" ]; then
     PERF_FLAME_OUTPUT=animated-flamegraph-$PID.svg
 fi
 
+if [ "${PERF_RECORD_SECONDS:-}" == "" ]; then
+    PERF_RECORD_SECONDS=5
+fi
+
 i=1
 while [[ $i -le $END ]]
         do
