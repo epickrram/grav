@@ -241,7 +241,7 @@ SVG
 			$x2 = sprintf "%0.1f", $x2;
 			my $w = sprintf "%0.1f", $x2 - $x1;
 			#my $animateId = "$stime[$j];$y1;$j";
-			my $wDiff = ($oldw == 0) ? 1 : $w - $oldw;
+			my $wDiff = $w - $oldw;
 			$wDiff = sprintf "%0.1f", $wDiff;
 			#my $begin = ($duration + $delay) * $j;
 			if ($wDiff != 0) {
@@ -530,6 +530,12 @@ sub max {
 	return $a;
 }
 
+sub maxArray {
+	my (@array) = @_;
+	my @sorted = sort { $a <=> $b } @array;
+	return $sorted[-1];
+}
+
 sub calculate_stime {
 	my ($depth, @d) = @_;
 	my @stime = ();
@@ -594,7 +600,7 @@ sub flow {
 #print "final DELTA for $k;$v = @totalDelta \n";			
 		$Node{"$k;$v"}->{delta} = [@totalDelta];
 		$Node{"$k;$v"}->{stime} = [@totalStime];
-#print "set to Node $k;$v = @{$Node{\"$k;$v\"}->{delta}}\n";	
+#print "set to Node $k;$v = @{$Node{\"$k;$v\"}->{delta}}\n";
 		delete $Tmp{$k};
 	}
 	for ($i = 0; $i <= $len_b; $i++) {
@@ -658,6 +664,8 @@ foreach (sort @Data) {
 		unshift(@samples2, $samples);
 	}
 
+#print "stack $stack samples is $samples samples2 = @samples2 \n";
+
 	# for chain graphs, annotate waker frames with "_[w]", for later
 	# coloring. This is a hack, but has a precedent ("_[k]" from perf).
 	if ($colors eq "chain") {
@@ -673,10 +681,12 @@ foreach (sort @Data) {
 		$stack .= join ";--;", @parts;
 	}
 
+
 	# merge frames and populate %Node:
 	$last = flow($last, [ '', split ";", $stack ], $time, @samples2);
 
-	$time += $samples;
+	my $maxSample = maxArray(@samples2);
+	$time += $maxSample;
 }
 flow($last, [], $time, @samples2);
 
@@ -803,8 +813,10 @@ my $inc = <<INC;
 
 	function startAnimation(phase) {
 		var animateElements = animateTagsByPhaseMap[phase];
-		for(var i = 0; i < animateElements.length; i++){
-			animateElements[i].beginElement();
+		if (animateElements) {
+			for(var i = 0; i < animateElements.length; i++){
+				animateElements[i].beginElement();
+			}
 		}
 	}
 
@@ -1175,10 +1187,6 @@ while (my ($id, $node) = each %Node) {
 	my $info;
 	if ($func eq "" and $depth == 0) {
 		$info = "all ($samples_txt $countname, 100%)";
-#		my $i;
-#		for ($i=0; $i < scalar @d; $i++) {
-#			$d[$i] = $timemax;
-#		}
 	} else {
 		my $escaped_func = $func;
 		# clean up SVG breaking characters:
@@ -1187,14 +1195,7 @@ while (my ($id, $node) = each %Node) {
 		$escaped_func =~ s/>/&gt;/g;
 		$escaped_func =~ s/"/&quot;/g;
 		$escaped_func =~ s/_\[[kwi]\]$//;	# strip any annotation
-#		unless (defined $samples) {
 		$info = "$escaped_func $samples_txt $countname";
-#		} else {
-#			my $d = $negate ? -$d : $d;
-#			my $deltapct = sprintf "%.2f", ((100 * $d) / ($timemax * $factor));
-#			$deltapct = $d > 0 ? "+$deltapct" : $deltapct;
-#			$info = "$escaped_func ($samples_txt $countname, $pct%; $deltapct%)";
-#		}
 	}
 
 	my $nameattr = { %{ $nameattr{$func}||{} } }; # shallow clone
@@ -1215,8 +1216,6 @@ while (my ($id, $node) = each %Node) {
 		$color = $vdgrey;
 	} elsif ($func eq "-") {
 		$color = $dgrey;
-	# } elsif (defined $delta) {
-	# 	$color = color_scale($delta, $maxdelta);
 	} elsif ($palette) {
 		$color = color_map($colors, $func);
 	} else {

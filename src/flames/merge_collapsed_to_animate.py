@@ -30,7 +30,8 @@ def findCollapsedFiles(collapsed_files_dir):
     files.sort(key=os.path.getctime)
     collapsed_files = []
     for file in files:
-        if os.path.basename(file).startswith(collapsed_file_prefix):
+        filename = os.path.basename(file)
+        if filename.startswith(collapsed_file_prefix) and filename.endswith(".collapsed"):
             collapsed_files.append(file)
     return collapsed_files
 
