@@ -29,7 +29,7 @@ if [ "${PERF_FLAME_OUTPUT:-}" == "" ]; then
 fi
 
 if [ "${PERF_RECORD_SECONDS:-}" == "" ]; then
-    PERF_RECORD_SECONDS=5
+    PERF_RECORD_SECONDS=10
 fi
 
 i=1

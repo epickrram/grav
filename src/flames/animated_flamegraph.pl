@@ -225,7 +225,7 @@ SVG
 		$self->{svg} .= qq/<\/rect>/;		
 	}
 
-	my $animateIdPrefix = 0;
+	my $animateIdIndex = 0;
 
 	sub animateWidth {
 		my ($self, $x1, $x2, $dRef, $stimeRef) = @_;
@@ -240,18 +240,14 @@ SVG
 			$x1 = sprintf "%0.1f", $x1;
 			$x2 = sprintf "%0.1f", $x2;
 			my $w = sprintf "%0.1f", $x2 - $x1;
-			#my $animateId = "$stime[$j];$y1;$j";
 			my $wDiff = $w - $oldw;
 			$wDiff = sprintf "%0.1f", $wDiff;
-			#my $begin = ($duration + $delay) * $j;
 			if ($wDiff != 0) {
-					$self->{svg} .= qq/<animate id="a${animateIdPrefix}p$j" attributeType="XML" attributeName="width" from="0" to="$wDiff" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/; 
+					$self->{svg} .= qq/<animate id="a${animateIdIndex}p$j" attributeType="XML" attributeName="width" from="0" to="$wDiff" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/;
 			}
 			$oldw = $w;
-#			$begin =  "$animateId.end+2s";
-#print "$j wdiff : $wDiff\n";
 		}
-		$animateIdPrefix++;
+		$animateIdIndex++;
 	}
 
 	sub animateX1 {
@@ -270,43 +266,40 @@ SVG
 			#my $animateId = "$stime[$j];$y1;$j";
 			my $x1Diff = sprintf "%0.1f", $x1 - $oldx1;
 			if ($x1Diff != 0) {
-				$self->{svg} .= qq/<animateTransform id="a${animateIdPrefix}p$j" type="translate" attributeName="transform" from="0 0" to="$x1Diff 0" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/; 
+				$self->{svg} .= qq/<animateTransform id="a${animateIdIndex}p$j" type="translate" attributeName="transform" from="0 0" to="$x1Diff 0" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/;
 			}
 			$oldx1 = $x1;
-#			$begin =  "$animateId.end+2s";
-#print "$j x1diff : $x1Diff\n";
 		}
-		$animateIdPrefix++;
+		$animateIdIndex++;
 	}
 
-	sub array_min {
-		my ($arrRef) = @_;
-		my @arr = @{$arrRef};
-		my $j = 0;
-		my $result;
-		for my $value (@arr) {
-		  $result = $value if !defined $result or $value < $result;
-		}	
-		return $result;
-	}
-
-
-	sub rectangleText {
-		my ($self, $func, $dRef, $color, $font, $size, $angle, $x, $y, $loc, $extra) = @_;
-		my @d = @{ $dRef };
-		my $chars = int( (array_min(\@d) * $widthpertime) / ($fontsize * $fontwidth));
+	sub generateText {
+		my ($func, $time) = @_;
+		my $chars = int( ($time * $widthpertime) / ($fontsize * $fontwidth));
 		my $text = "";
 		if ($chars >= 3) { # room for one char plus two dots
-		$func =~ s/_\[[kwi]\]$//;	# strip any annotation
+			$func =~ s/_\[[kwi]\]$//;	# strip any annotation
 			$text = substr $func, 0, $chars;
 			substr($text, -2, 2) = ".." if $chars < length $func;
 			$text =~ s/&/&amp;/g;
 			$text =~ s/</&lt;/g;
 			$text =~ s/>/&gt;/g;
 		}
+		return $text;
+	}
+
+	sub rectangleText {
+		my ($self, $func, $dRef, $color, $font, $size, $angle, $x, $y, $loc, $extra) = @_;
+		my @d = @{ $dRef };
+		my $text = generateText($func, $d[0]);
 		$x = sprintf "%0.2f", $x;
 		$loc = defined $loc ? $loc : "left";
 		$extra = defined $extra ? $extra : "";
+		my $j;
+		for ($j = 0; $j < scalar @d; $j++) {
+			my $phaseText = generateText($func, $d[$j]);
+			$extra = $extra . " p$j=\"$phaseText\""
+		}
 		$self->{svg} .= qq/<text text-anchor="$loc" x="$x" y="$y" font-size="$size" font-family="$font" fill="$color" $extra >$text<\/text>\n/;
 	} 
 
@@ -765,16 +758,26 @@ my $inc = <<INC;
 		title = document.getElementById("fgtitle");
 		searching = 0;
 		first_animation = 1;
-		animating = undefined;
+		animationPhase = undefined;
 		initAnimateTagsMap(document.getElementsByTagName("animate"));
 		initAnimateTagsMap(document.getElementsByTagName("animateTransform"));
+		initTextTagsMap(document.getElementsByTagName("text"));
 	}
 
 	var animateTagsByPhaseMap = {};
+	var textToModifyTags = [];
 
 	function initAnimateTagsMap(animateTags) {
 		for(i = 0; i < animateTags.length; i++) {
     		addAnimateTag(animateTags[i]);
+		}
+	}
+
+	function initTextTagsMap(textTags) {
+		for(i = 0; i < textTags.length; i++) {
+			if (textTags[i].hasAttribute("p0")) {
+    			addTextTag(textTags[i]);
+    		}
 		}
 	}
 
@@ -787,19 +790,27 @@ my $inc = <<INC;
 	    animateTagsByPhaseMap[phase].push(tag);
 	}
 
+	function addTextTag(tag) {
+	    textToModifyTags.push(tag);
+	}
+
 	function animate_prompt() {
-		if (!animating) {
-			animating = 1;
+		if (!animationPhase) {
+			animationPhase = 1;
 	    	setTimeout(function() { animate(); }, 1000);
 		} 
 	}
 
 	function animate() {
 		var size = Object.keys(animateTagsByPhaseMap).length;
-		if (animating < size) {
-			animatebtn.textContent = "" + animating;
+		if (animationPhase < size) {
+			animatebtn.textContent = "" + animationPhase;
 			setTimeout(function() {
-						startAnimation(animating++);
+						var currentPhase = animationPhase++;
+						startAnimation(currentPhase);
+						setTimeout(function() {
+							setText(currentPhase);
+						}, $duration * 500); // set text half way through animation
 						setTimeout(function() { 
 								animate(); 
 						}, ($duration + $delay) * 1000);
@@ -808,6 +819,17 @@ my $inc = <<INC;
 		else {
 			animatebtn.textContent = "";
 			animatebtn.style["opacity"] = "0";
+		}
+	}
+
+	function setText(phase) {
+		for (i = 0; i < textToModifyTags.length; i++) {
+			tag = textToModifyTags[i];
+			currentText = tag.getAttribute("p"+(phase-1));
+			newText = tag.getAttribute("p"+phase);
+			if (newText != currentText) {
+				tag.textContent = "" + newText;
+			}
 		}
 	}
 
@@ -825,7 +847,7 @@ my $inc = <<INC;
 	}
 
 	function animateout(e) {
-		if (animating) {
+		if (animationPhase) {
 			animatebtn.style["opacity"] = "1.0";
 		} else {
 			animatebtn.style["opacity"] = "0.1";
