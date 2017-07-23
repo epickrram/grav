@@ -5,7 +5,7 @@ set -e -u -o pipefail
 SCRIPT_DIR=$(dirname "$0")
 
 PID="${1:-}"
-END="${2:-}"
+NUMBER_OF_RECORDINGS="${2:-}"
 REGEX="${3:-NOT_SET}"
 
 if [[ "$PID" == "" ]]; then
@@ -13,7 +13,7 @@ if [[ "$PID" == "" ]]; then
   exit 1
 fi
 
-if [[ "$END" == "" ]]; then
+if [[ "$NUMBER_OF_RECORDINGS" == "" ]]; then
   echo "Please supply number of captures as second parameter"
   exit 1
 fi
@@ -33,7 +33,7 @@ if [ "${PERF_RECORD_SECONDS:-}" == "" ]; then
 fi
 
 i=1
-while [[ $i -le $END ]]
+while [[ $i -le $NUMBER_OF_RECORDINGS ]]
         do
 			source $SCRIPT_DIR/options-perf-thread-flames.sh $i
 			jstack "$PID" > $JSTACKS

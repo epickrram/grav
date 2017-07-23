@@ -16,7 +16,7 @@ Usage:
 
 ```
 $ ./bin/scheduling-profile.sh $PID
-Recording scheduling information for 15 seconds
+Recording scheduling information for 10 seconds
 Wrote scheduler-profile-$PID.svg
 ```
 
@@ -54,7 +54,7 @@ Usage:
 $ export PERF_MAP_AGENT_DIR=/path/to/perf-map-agent/
 $ export FLAMEGRAPH_DIR=/path/to/flamegraph/
 $ ./bin/perf-thread-flames.sh $PID
-Recording events for 15 seconds (adapt by setting PERF_RECORD_SECONDS)
+Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
 [ perf record: Woken up 1 times to write data ]
 [ perf record: Captured and wrote 0.343 MB /tmp/perf-$PID.data (835 samples) ]
 Wrote flamegraph-$PID.svg
@@ -65,7 +65,7 @@ To filter out particular threads, supply a regex as the second argument:
 ```
 $ ./bin/perf-thread-flames.sh $PID ".*GC.*"
 Capturing stacks for threads matching '.*GC.*'
-Recording events for 15 seconds (adapt by setting PERF_RECORD_SECONDS)
+Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
 [ perf record: Woken up 7 times to write data ]
 [ perf record: Captured and wrote 1.026 MB /tmp/perf-$PID.data (496 samples) ]
 Wrote flamegraph-$PID.svg
@@ -119,6 +119,53 @@ provider supports automatic port collision detection and resolution.
 ```
  Forwarded port 8080 to port 18080 to allow access to a server running inside the box.
  
+### Animated flamegraphs 
+
+Create several flame graphs in time and one animated SVG FlameGraph that captures all of them. 
+
+![Animated FlameGraph](https://github.com/langera/blob-images/blob/master/animated.gif?raw=true)
+
+Pre-requisites: the following repositories need to be cloned and available locally:
+
+   * [perf-map-agent](https://github.com/jvm-profiling-tools/perf-map-agent)
+   * [flamegraph](https://github.com/brendangregg/Flamegraph)
+
+Usage:
+
+```
+# set up environment variables
+$ export PERF_MAP_AGENT_DIR=/path/to/perf-map-agent/
+$ export FLAMEGRAPH_DIR=/path/to/flamegraph/
+# run animate-flames PID NUMBER_OF_RECORDINGS (= 5 in this case) 
+$ ./bin/animate-flames $PID 5
+Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.114 MB /tmp/perf-$PID.data (~4993 samples) ]
+1 Wrote /tmp/out-threads-$PID-1.collapsed
+Wrote flamegraph-$PID-1.svg
+Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.120 MB /tmp/perf-$PID.data (~5249 samples) ]
+2 Wrote /tmp/out-threads-$PID-2.collapsed
+Wrote flamegraph-$PID-2.svg
+Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.117 MB /tmp/perf-$PID.data (~5127 samples) ]
+3 Wrote /tmp/out-threads-$PID-3.collapsed
+Wrote flamegraph-$PID-3.svg
+Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.118 MB /tmp/perf-$PID.data (~5143 samples) ]
+4 Wrote /tmp/out-threads-$PID-4.collapsed
+Wrote flamegraph-$PID-4.svg
+Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
+[ perf record: Woken up 1 times to write data ]
+[ perf record: Captured and wrote 0.118 MB /tmp/perf-$PID.data (~5158 samples) ]
+5 Wrote /tmp/out-threads-$PID-5.collapsed
+Wrote flamegraph-$PID-5.svg
+Wrote animated-flamegraph-$PID.svg
+```
+
 
 ### Maintainers
 
