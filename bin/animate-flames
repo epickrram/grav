@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -e -u -o pipefail
+
+SCRIPT_DIR=$(dirname "$0")
+
+PID="${1:-}"
+NUMBER_OF_RECORDINGS="${2:-}"
+REGEX="${3:-NOT_SET}"
+
+if [[ "$PID" == "" ]]; then
+  echo "Please supply pid as first parameter"
+  exit 1
+fi
+
+if [[ "$NUMBER_OF_RECORDINGS" == "" ]]; then
+  echo "Please supply number of captures as second parameter"
+  exit 1
+fi
+
+if [[ "$REGEX" != "NOT_SET" ]]; then
+    echo "Capturing stacks for threads matching '$REGEX'"
+fi
+
+source $SCRIPT_DIR/validate-perf-map-agent.sh
+
+if [ "${PERF_FLAME_OUTPUT:-}" == "" ]; then
+    PERF_FLAME_OUTPUT=animated-flamegraph-$PID.svg
+fi
+
+if [ "${PERF_RECORD_SECONDS:-}" == "" ]; then
+    PERF_RECORD_SECONDS=10
+fi
+
+i=1
+while [[ $i -le $NUMBER_OF_RECORDINGS ]]
+        do
+			source $SCRIPT_DIR/options-perf-thread-flames.sh $i
+			jstack "$PID" > $JSTACKS
+			$PERF_MAP_AGENT_DIR/bin/perf-java-record-stack "$PID"
+			sudo perf script -i $PERF_DATA_FILE > $STACKS
+			$FLAMEGRAPH_DIR/stackcollapse-perf.pl $PERF_COLLAPSE_OPTS $STACKS > $COLLAPSED
+			python $GRAV_DIR/src/flames/convert_tid_stacks.py $JSTACKS $COLLAPSED $COLLAPSED_WITH_THREADS "$REGEX" "$AGGREGATE_ON_THREAD_PREFIX"
+			echo "$i Wrote $COLLAPSED_WITH_THREADS"
+
+            cat $COLLAPSED_WITH_THREADS | $FLAMEGRAPH_DIR/flamegraph.pl $PERF_FLAME_OPTS > flamegraph-$PID-$i.svg && \
+            echo "Wrote flamegraph-$PID-$i.svg"
+
+			((i = i + 1))
+        done 
+
+python $GRAV_DIR/src/flames/merge_collapsed_to_animate.py $PERF_JAVA_TMP $COLLAPSED_WITH_THREADS_PREFIX animated-$COLLAPSED_WITH_THREADS_PREFIX.collapsed
+
+cat animated-$COLLAPSED_WITH_THREADS_PREFIX.collapsed | $GRAV_DIR/src/flames/animated_flamegraph.pl $PERF_FLAME_OPTS > $PERF_FLAME_OUTPUT && \
+echo "Wrote $PERF_FLAME_OUTPUT"
+
+
