@@ -61,7 +61,7 @@ bpf = BPF(text=prog % (int(sys.argv[1])), usdt_contexts=[usdt])
 time.sleep(5)
 stack_traces = bpf["stack_traces"]
 for k, v in bpf["counts"].iteritems():
-    print str(k) + " = " + str(v)
+    print "%d allocations at" % v.value
     for addr in stack_traces.walk(k.user_stack_id):
         pid = k.pid
         print bpf.sym(addr, pid) + (" (from raw %-16x " % addr) + ")"
