@@ -1,0 +1,22 @@
+apply plugin: "java"
+
+repositories {
+    mavenCentral()
+    maven { url 'http://oss.sonatype.org/content/repositories/snapshots/' }
+}
+
+version = '0.1'
+
+
+dependencies {
+}
+
+
+task wordcount(type: JavaExec, description: 'Run WordCountApp', group: 'sample_apps') {
+
+    main 'org.grav.sample_apps.WordCountApp'
+    classpath  sourceSets.main.runtimeClasspath
+    jvmArgs('-XX:+DTraceAllocProbes', '-XX:+PreserveFramePointer', '-XX:+ExtendedDTraceProbes')
+    args('hamlet.txt')
+
+}
