@@ -59,6 +59,6 @@ if __name__ == "__main__":
                 if matched_entry:
                     print "%s (addr = %s) matches %s" % (prefix, hex(addr), matched_entry.entry)
                 else:
-                    print "%s (addr = %s) NO_MATCH_IN_MAP" % (prefix, addr)
+                    print "%s (addr = %s) NO_MATCH_IN_MAP" % (prefix, hex(addr))
             else:
                 print "%s NOT_FOUND" % line.rstrip()
