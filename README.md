@@ -88,6 +88,7 @@ will run a vagrant box with:
 1. ubuntu trusty64
 1. Java OpenJDK8
 1. perf
+1. [bcc](https://github.com/iovisor/bcc)
 1. [perf-map-agent](https://github.com/jvm-profiling-tools/perf-map-agent)
 1. [FlameGraph](https://github.com/brendangregg/Flamegraph) scripts
 1. grav scripts
