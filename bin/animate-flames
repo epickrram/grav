@@ -49,9 +49,9 @@ while [[ $i -le $NUMBER_OF_RECORDINGS ]]
 			((i = i + 1))
         done 
 
-python $GRAV_DIR/src/flames/merge_collapsed_to_animate.py $PERF_JAVA_TMP $COLLAPSED_WITH_THREADS_PREFIX animated-$COLLAPSED_WITH_THREADS_PREFIX.collapsed
+python $GRAV_DIR/src/animation/merge_collapsed_to_animate.py $PERF_JAVA_TMP $COLLAPSED_WITH_THREADS_PREFIX animated-$COLLAPSED_WITH_THREADS_PREFIX.collapsed
 
-cat animated-$COLLAPSED_WITH_THREADS_PREFIX.collapsed | $GRAV_DIR/src/flames/animated_flamegraph.pl $PERF_FLAME_OPTS > $PERF_FLAME_OUTPUT && \
+cat animated-$COLLAPSED_WITH_THREADS_PREFIX.collapsed | $GRAV_DIR/src/animation/animated_flamegraph.pl $PERF_FLAME_OPTS > $PERF_FLAME_OUTPUT && \
 echo "Wrote $PERF_FLAME_OUTPUT"
 
 
