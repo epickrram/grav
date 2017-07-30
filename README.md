@@ -85,7 +85,7 @@ $ vagrant up
 ```
 
 will run a vagrant box with:
-1. ubuntu trusty64
+1. ubuntu zesty64
 1. Java OpenJDK8
 1. perf
 1. [iovisor BCC](https://github.com/iovisor/bcc)
