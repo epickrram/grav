@@ -46,19 +46,20 @@ if __name__ == "__main__":
 
     aggregate_factor = 100000
     addresses = create_address_map()
+    out_data = ""
 
     with open(heap_file, "r") as ins:
         for line in ins:
+            orig = line
             # (from raw 7f6522890fdf     )
-            p = re.compile('(.*)\(from\s+raw\s+(\w+)\s+\)')
-            m = p.match(line)
-            if m:
-                prefix = m.group(1)
-                addr = int(m.group(2), 16)
+            p = re.findall(';0x([0-9a-f]+);', line)
+            for match in p:
+                addr = int(match, 16)
                 matched_entry = find_address_entry(addr)
                 if matched_entry:
-                    print "%s (addr = %s) matches %s" % (prefix, hex(addr), matched_entry.entry)
+                    line = line.replace("0x" + match, matched_entry.entry)
                 else:
-                    print "%s (addr = %s) NO_MATCH_IN_MAP" % (prefix, hex(addr))
-            else:
-                print "%s NOT_FOUND" % line.rstrip()
+                    line = line.replace("0x" + match, "[unknown]")
+                    
+            print line
+
