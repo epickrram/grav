@@ -5,6 +5,28 @@ import re
 import sys
 import unicodedata
 
+java_primitives = {
+    'Z' : 'boolean',
+    'B' : 'byte',
+    'S' : 'short',
+    'I' : 'int',
+    'J' : 'long',
+    'F' : 'float',
+    'D' : 'double',
+    'C' : 'char',
+}
+
+def translateJavaPrimitiveArrays(java_trace):
+    text = java_trace
+    if java_trace[0] == '[':
+        name = java_primitives.get(java_trace[1])
+        if name:
+            text = name + "[]"
+        elif text[1] == 'L':
+            text = java_trace[2:] + "[]"
+    elif java_trace[0] == 'L':
+        text = java_trace[1:]
+    return text
 
 class PerfMapEntry:
     addr = 0
@@ -29,7 +51,8 @@ def create_address_map(perf_agent_map_file):
             if m:
                 addr = int(m.group(1), 16)
                 size = int(m.group(2), 16)
-                entry = PerfMapEntry(addr, size, m.group(3))
+                text = translateJavaPrimitiveArrays(m.group(3))
+                entry = PerfMapEntry(addr, size, text)
                 key = addr / aggregate_factor
                 result_map.setdefault(key, []).append(entry)
     return result_map
@@ -57,8 +80,8 @@ def remove_control_characters(l):
     return "".join(ch for ch in l if unicodedata.category(ch)[0]!="C")
 
 def tidy(line):
-    if line.startswith('L'):
-        line = line[1:]
+    allocated = line[:line.find(';')]
+    line = line.replace(allocated, translateJavaPrimitiveArrays(allocated))
     line = re.sub(r'\(.*?\)', '', line)
     line = re.sub(r'\[clone.*?\]', '', line)
     line = remove_control_characters(line)

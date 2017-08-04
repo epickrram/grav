@@ -73,7 +73,10 @@ for k, v in bpf["counts"].iteritems():
         if symbol == "[unknown]":
             stack.append(("0x%-16x" % addr).strip())
         else:
-            stack.append(symbol.strip().replace(';',':'))
+            stack_trace_entry = symbol.strip().replace(';',':')
+            if stack_trace_entry[0] == 'L' and stack_trace_entry.find(':::'):
+                stack_trace_entry = stack_trace_entry[1:]
+            stack.append(stack_trace_entry)
     stack.reverse()
     try:
         stack_counts[k.name.strip().encode('utf-8', errors='replace') + ";" + ";".join(stack).encode('utf-8', errors='replace')] = int(v.value)
