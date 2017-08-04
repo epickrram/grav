@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
+import codecs
 import re
 import sys
+import unicodedata
 
 
 class PerfMapEntry:
@@ -17,7 +19,7 @@ class PerfMapEntry:
         return self.addr <= mapped_addr <= self.toaddr
 
 
-def create_address_map():
+def create_address_map(perf_agent_map_file):
     result_map = {}
     with open(perf_agent_map_file, "r") as ins:
         for line in ins:
@@ -32,7 +34,7 @@ def create_address_map():
                 result_map.setdefault(key, []).append(entry)
     return result_map
 
-def find_address_entry(addr):
+def find_address_entry(addr, addresses):
     key = addr / aggregate_factor
     if key in addresses.keys():
         for map_entry in addresses[key]:
@@ -40,26 +42,34 @@ def find_address_entry(addr):
                 return map_entry
     return None
 
+def map_addresses(line, addresses):
+    p = re.findall(';0x([0-9a-f]+)', line)
+    for match in p:
+        addr = int(match, 16)
+        matched_entry = find_address_entry(addr, addresses)
+        if matched_entry:
+            line = line.replace("0x" + match, matched_entry.entry)
+        else:
+            line = line.replace("0x" + match, "[unknown]")
+    return line
+
+def remove_control_characters(l):
+    return "".join(ch for ch in l if unicodedata.category(ch)[0]!="C")
+
+def tidy(line):
+    if line.startswith('L'):
+        line = line[1:]
+    line = re.sub(r'\(.*?\)', '', line)
+    line = re.sub(r'\[clone.*?\]', '', line)
+    line = remove_control_characters(line)
+    return line
+
 if __name__ == "__main__":
-    perf_agent_map_file = sys.argv[1]
-    heap_file = sys.argv[2]
-
     aggregate_factor = 100000
-    addresses = create_address_map()
-    out_data = ""
+    addresses = {}
+    if (len(sys.argv) >  1):
+        addresses = create_address_map(sys.argv[1])
 
-    with open(heap_file, "r") as ins:
-        for line in ins:
-            orig = line
-            # (from raw 7f6522890fdf     )
-            p = re.findall(';0x([0-9a-f]+);', line)
-            for match in p:
-                addr = int(match, 16)
-                matched_entry = find_address_entry(addr)
-                if matched_entry:
-                    line = line.replace("0x" + match, matched_entry.entry)
-                else:
-                    line = line.replace("0x" + match, "[unknown]")
-                    
-            print line
+    for line in codecs.getreader('utf-8')(sys.stdin):
+        print tidy(map_addresses(line, addresses))
 

@@ -1,10 +1,7 @@
 #!/usr/bin/python
-from bcc import BPF,USDT
-
-import json
 import sys
 import time
-
+from bcc import BPF, USDT
 
 if len(sys.argv) < 2:
     print("Usage: %s <pid>" % (sys.argv[0]))
@@ -67,6 +64,7 @@ if len(bpf["tids"]) == 0:
 stack_traces = bpf["stack_traces"]
 all_stacks=[]
 stack_counts=dict()
+
 for k, v in bpf["counts"].iteritems():
     stack=[]
     for addr in stack_traces.walk(k.user_stack_id):
@@ -75,7 +73,7 @@ for k, v in bpf["counts"].iteritems():
         if symbol == "[unknown]":
             stack.append(("0x%-16x" % addr).strip())
         else:
-            stack.append(symbol.strip())
+            stack.append(symbol.strip().replace(';',':'))
     stack.reverse()
     try:
         stack_counts[k.name.strip().encode('utf-8', errors='replace') + ";" + ";".join(stack).encode('utf-8', errors='replace')] = int(v.value)
