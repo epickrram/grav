@@ -10,6 +10,7 @@ if [[ "$PID" == "" ]]; then
   echo "Please supply pid as first parameter"
   exit 1
 fi
+PERF_FLAME_OUTPUT="allocation-flamegraph-$PID.svg"
 
 source $SCRIPT_DIR/validate-perf-map-agent.sh
 source $SCRIPT_DIR/options-perf-thread-flames.sh

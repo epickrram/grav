@@ -18,14 +18,17 @@ java_primitives = {
 
 def translateJavaPrimitiveArrays(java_trace):
     text = java_trace
-    if java_trace[0] == '[':
-        name = java_primitives.get(java_trace[1])
-        if name:
-            text = name + "[]"
-        elif text[1] == 'L':
-            text = java_trace[2:] + "[]"
-    elif java_trace[0] == 'L':
-        text = java_trace[1:]
+    try:
+        if java_trace[0] == '[':
+            name = java_primitives.get(java_trace[1])
+            if name:
+                text = name + "[]"
+            elif text[1] == 'L':
+                text = java_trace[2:] + "[]"
+        elif java_trace[0] == 'L':
+            text = java_trace[1:]
+    except IndexError as e:
+        print "Failed to parse: " + java_trace + "\n" + str(e)
     return text
 
 class PerfMapEntry:
