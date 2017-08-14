@@ -28,7 +28,7 @@ def translateJavaPrimitiveArrays(java_trace):
         elif java_trace[0] == 'L':
             text = java_trace[1:]
     except IndexError as e:
-        print "Failed to parse: " + java_trace + "\n" + str(e)
+        print "Failed to parse: " + java_trace + ": " + str(e)
     return text
 
 class PerfMapEntry:

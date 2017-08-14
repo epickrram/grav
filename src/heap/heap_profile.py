@@ -3,6 +3,29 @@ import sys
 import time
 from bcc import BPF, USDT
 
+# minimum amount of total allocations for an object to be included in the flamegraph
+MIN_ALLOCATION_SHARE_PERCENTAGE=1
+
+def remove_objects_with_small_allocation_count(stack_counts):
+    alloc_count_by_class = dict()
+    total_allocations = 0
+    large_allocations = dict()
+    for k, v in stack_counts.iteritems():
+        class_name = k.split(";")[0]
+        if class_name not in alloc_count_by_class:
+            alloc_count_by_class[class_name] = v
+        else:
+            alloc_count_by_class[class_name] += v
+        total_allocations += v
+    
+    for k, v in stack_counts.iteritems():
+        
+        class_name = k.split(";")[0]
+        percentage_of_allocations = (alloc_count_by_class[class_name] * 100) / float(total_allocations)
+        if percentage_of_allocations > MIN_ALLOCATION_SHARE_PERCENTAGE:
+            large_allocations[k] = v
+    return large_allocations
+
 if len(sys.argv) < 2:
     print("Usage: %s <pid>" % (sys.argv[0]))
     sys.exit(1)
@@ -65,6 +88,7 @@ stack_traces = bpf["stack_traces"]
 all_stacks=[]
 stack_counts=dict()
 
+
 for k, v in bpf["counts"].iteritems():
     stack=[]
     for addr in stack_traces.walk(k.user_stack_id):
@@ -76,16 +100,18 @@ for k, v in bpf["counts"].iteritems():
             stack_trace_entry = symbol.strip().replace(';',':')
             if stack_trace_entry[0] == 'L' and stack_trace_entry.find(':::'):
                 stack_trace_entry = stack_trace_entry[1:]
-            stack.append(stack_trace_entry)
+            stack.append(stack_trace_entry.encode('utf-8', errors='replace'))
     stack.reverse()
     try:
-        stack_counts[k.name.strip().encode('utf-8', errors='replace') + ";" + ";".join(stack).encode('utf-8', errors='replace')] = int(v.value)
-    except UnicodeDecodeError:
-        print "Failed to decode stack: " + str(stack)
+        key_name = u"" + k.name.strip().encode('utf-8', errors='replace')
+        stack_counts[key_name + ";" + u";".join(stack).encode('utf-8', errors='replace')] = int(v.value)
+    except UnicodeDecodeError as e:
+        err_msg = str(e)
+        print "Failed to decode stack: " + str(k) + ": " + err_msg
 
 
-
-for k, v in stack_counts.iteritems():
+large_stack_counts = remove_objects_with_small_allocation_count(stack_counts)
+for k, v in large_stack_counts.iteritems():
     print k + " " + str(v)
 
 
