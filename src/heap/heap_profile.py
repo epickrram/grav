@@ -26,6 +26,9 @@ def remove_objects_with_small_allocation_count(stack_counts):
             large_allocations[k] = v
     return large_allocations
 
+def remove_non_ascii(text):
+    return ''.join(i for i in text if ord(i)<128)
+
 if len(sys.argv) < 2:
     print("Usage: %s <pid>" % (sys.argv[0]))
     sys.exit(1)
@@ -103,11 +106,11 @@ for k, v in bpf["counts"].iteritems():
             stack.append(stack_trace_entry.encode('utf-8', errors='replace'))
     stack.reverse()
     try:
-        key_name = u"" + k.name.strip().encode('utf-8', errors='replace')
+        key_name = remove_non_ascii(k.name).strip().encode('utf-8', errors='replace')
         stack_counts[key_name + ";" + u";".join(stack).encode('utf-8', errors='replace')] = int(v.value)
     except UnicodeDecodeError as e:
         err_msg = str(e)
-        print "Failed to decode stack: " + str(k) + ": " + err_msg
+        print "Failed to decode stack: " + k.name.strip() + ";" + str(stack) + ": " + err_msg
 
 
 large_stack_counts = remove_objects_with_small_allocation_count(stack_counts)
