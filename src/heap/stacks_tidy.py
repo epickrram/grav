@@ -34,7 +34,7 @@ def translateJavaPrimitiveArrays(java_trace):
 class PerfMapEntry:
     addr = 0
     toaddr = 0
-    entry = ""
+    stack_entry = ""
     def __init__(self, addr, size, entry):
         self.addr = addr
         self.toaddr = addr + size
@@ -93,9 +93,20 @@ def tidy(line):
 if __name__ == "__main__":
     aggregate_factor = 100000
     addresses = {}
-    if (len(sys.argv) >  1):
+    regex = None
+    if len(sys.argv) >  1:
         addresses = create_address_map(sys.argv[1])
+    if len(sys.argv) >  2:
+        regex_pattern = sys.argv[2]
+        if regex_pattern != "NOT_SET":
+            regex = re.compile(regex_pattern)
 
     for line in codecs.getreader('utf-8')(sys.stdin):
-        print tidy(map_addresses(line, addresses))
+        stack_entry = tidy(map_addresses(line, addresses))
+
+        if regex is not None:
+            if regex.search(stack_entry) is not None:
+                print stack_entry
+        else:
+            print stack_entry
 
