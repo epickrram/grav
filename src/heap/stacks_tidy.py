@@ -6,14 +6,14 @@ import sys
 import unicodedata
 
 java_primitives = {
-    'Z' : 'boolean',
-    'B' : 'byte',
-    'S' : 'short',
-    'I' : 'int',
-    'J' : 'long',
-    'F' : 'float',
-    'D' : 'double',
-    'C' : 'char',
+    'Z' : 'java::boolean',
+    'B' : 'java::byte',
+    'S' : 'java::short',
+    'I' : 'java::int',
+    'J' : 'java::long',
+    'F' : 'java::float',
+    'D' : 'java::double',
+    'C' : 'java::char',
 }
 
 def translateJavaPrimitiveArrays(java_trace):
