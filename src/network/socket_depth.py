@@ -71,7 +71,7 @@ with open("/tmp/tcpv4-peak.csv", "a+", 0) as p:
             current_time = datetime.datetime.now()
 
             for socket, total in bpf["total_rcv_mem"].iteritems():
-                t.write("{0},{1},{2},{3}\n".format(current_time.strftime("%M:%H:%S"), current_time.strftime("%s"), to_socket_key(socket), total.value))
+                t.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), total.value))
             for socket, peak in bpf["peak_rcv_mem"].iteritems():
-                p.write("{0},{1},{2},{3}\n".format(current_time.strftime("%M:%H:%S"), current_time.strftime("%s"), to_socket_key(socket), peak.value))
+                p.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), peak.value))
 
