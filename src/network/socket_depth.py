@@ -79,4 +79,7 @@ with open("/tmp/tcpv4-peak.csv", "a+", 0) as p:
                     t.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), total.value))
                 for socket, peak in max_depth.iteritems():
                     p.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), peak.value))
+                total_depth.clear()
+                max_depth.clear()
+
 
