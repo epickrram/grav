@@ -43,10 +43,10 @@ int trace_socket_rcv(struct pt_regs *ctx, struct sock *sk, struct sk_buff *skb) 
         u64 zero = 0, *total, *max;
         int rmem = sk->sk_rmem_alloc.counter;
         total = total_rcv_mem.lookup_or_init(&ipv4_key, &zero);
-        (*total) += rmem;
+        (*total) += rmem + skb->data_len;
         max = peak_rcv_mem.lookup_or_init(&ipv4_key, &zero);
         if (rmem > (*max)) {
-            (*max) = rmem;
+            (*max) = rmem + skb->data_len;
         }
     }
 
@@ -69,9 +69,14 @@ with open("/tmp/tcpv4-peak.csv", "a+", 0) as p:
 
             time.sleep(1)
             current_time = datetime.datetime.now()
+            total_depth = bpf["total_rcv_mem"]
+            max_depth = bpf["peak_rcv_mem"]
+            if len(total_depth) == 0 and len(max_depth) == 0:
+                print "No data captured"
 
-            for socket, total in bpf["total_rcv_mem"].iteritems():
-                t.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), total.value))
-            for socket, peak in bpf["peak_rcv_mem"].iteritems():
-                p.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), peak.value))
+            else:
+                for socket, total in total_depth.iteritems():
+                    t.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), total.value))
+                for socket, peak in max_depth.iteritems():
+                    p.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), peak.value))
 
