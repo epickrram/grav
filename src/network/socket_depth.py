@@ -32,7 +32,6 @@ BPF_HASH(peak_rcv_mem, struct ipv4_key_t);
 int trace_socket_rcv(struct pt_regs *ctx, struct sock *sk, struct sk_buff *skb) {
     u16 dport = 0, family = sk->__sk_common.skc_family;
 
-
     if (family == AF_INET) {
         struct ipv4_key_t ipv4_key = {};
         ipv4_key.saddr = sk->__sk_common.skc_rcv_saddr;
