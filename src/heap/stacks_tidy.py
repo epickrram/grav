@@ -93,20 +93,10 @@ def tidy(line):
 if __name__ == "__main__":
     aggregate_factor = 100000
     addresses = {}
-    regex = None
     if len(sys.argv) >  1:
         addresses = create_address_map(sys.argv[1])
-    if len(sys.argv) >  2:
-        regex_pattern = sys.argv[2]
-        if regex_pattern != "NOT_SET":
-            regex = re.compile(regex_pattern)
-
     for line in codecs.getreader('utf-8')(sys.stdin):
         stack_entry = tidy(map_addresses(line, addresses))
 
-        if regex is not None:
-            if regex.search(stack_entry) is not None:
-                print stack_entry
-        else:
-            print stack_entry
+        print stack_entry
 

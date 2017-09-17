@@ -1,12 +1,35 @@
 #!/usr/bin/python
 
 import argparse
+import re
 import sys
 import time
 from bcc import BPF, USDT
 
 # minimum amount of total allocations for an object to be included in the flamegraph
 MIN_ALLOCATION_SHARE_PERCENTAGE=1
+
+def apply_regex(stack_counts, regex_list, should_include):
+    if regex_list is None:
+        return stack_counts
+    filtered_stack_counts=dict()
+    if should_include is False:
+        filtered_stack_counts=dict(stack_counts)
+    for pattern in regex_list:
+        regex = re.compile(pattern)
+        for k, v in stack_counts.iteritems():
+            if should_include and regex.search(k) is not None:
+                filtered_stack_counts[k] = v
+            elif should_include is False and regex.search(k) is not None:
+                if k in filtered_stack_counts:
+                    del filtered_stack_counts[k]
+    return filtered_stack_counts
+
+def apply_exclusion_regex(stack_counts, regex_list):
+    return apply_regex(stack_counts, regex_list, False)
+
+def apply_inclusion_regex(stack_counts, regex_list):
+    return apply_regex(stack_counts, regex_list, True)
 
 def remove_objects_with_small_allocation_count(stack_counts):
     alloc_count_by_class = dict()
@@ -73,10 +96,10 @@ def get_arg_parser():
 
     parser.add_argument('-j', type=str, dest='lib_jvm_path', help='Path to libjvm.so', default='/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so')
     parser.add_argument('-p', type=int, dest='pid', help='PID of the target process', required=True)
-    parser.add_argument('-i', type=str, dest='include_regex', help='Regex for stacks to include')
-    parser.add_argument('-e', type=str, dest='exclude_regex', help='Regex for stacks to exclude')
+    parser.add_argument('-i', type=str, dest='include_regex', help='Regex for stacks to include', nargs='*')
+    parser.add_argument('-e', type=str, dest='exclude_regex', help='Regex for stacks to exclude', nargs='*')
     parser.add_argument('-s', type=int, dest='sampling_interval_micros', help='Sampling interval in microseconds')
-    parser.add_argument('-d', type=int, dest='duration_seconds', help='Recording duration in seconds')
+    parser.add_argument('-d', type=int, dest='duration_seconds', help='Recording duration in seconds', default=10)
 
     return parser
 
@@ -88,7 +111,7 @@ usdt.enable_probe(probe="object__alloc", fn_name="trace_alloc")
 bpf = BPF(text=prog, usdt_contexts=[usdt])
 
 
-time.sleep(5)
+time.sleep(float(str(args.duration_seconds)))
 
 if len(bpf["tids"]) == 0:
     print "No data found - are DTrace probes enabled in running process?"
@@ -119,8 +142,10 @@ for k, v in bpf["counts"].iteritems():
         print "Failed to decode stack: " + k.name.strip() + ";" + str(stack) + ": " + err_msg
 
 
-large_stack_counts = remove_objects_with_small_allocation_count(stack_counts)
-for k, v in large_stack_counts.iteritems():
+stack_counts = remove_objects_with_small_allocation_count(stack_counts)
+stack_counts = apply_inclusion_regex(stack_counts, args.include_regex)
+stack_counts = apply_exclusion_regex(stack_counts, args.exclude_regex)
+for k, v in stack_counts.iteritems():
     print k + " " + str(v)
 
 
