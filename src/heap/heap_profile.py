@@ -31,10 +31,6 @@ def remove_objects_with_small_allocation_count(stack_counts):
 def remove_non_ascii(text):
     return ''.join(i for i in text if ord(i)<128)
 
-if len(sys.argv) < 2:
-    print("Usage: %s <pid>" % (sys.argv[0]))
-    sys.exit(1)
-
 
 prog="""
 #include <linux/types.h>
@@ -80,6 +76,7 @@ def get_arg_parser():
     parser.add_argument('-i', type=str, dest='include_regex', help='Regex for stacks to include')
     parser.add_argument('-e', type=str, dest='exclude_regex', help='Regex for stacks to exclude')
     parser.add_argument('-s', type=int, dest='sampling_interval_micros', help='Sampling interval in microseconds')
+    parser.add_argument('-d', type=int, dest='duration_seconds', help='Recording duration in seconds')
 
     return parser
 
