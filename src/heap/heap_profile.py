@@ -1,4 +1,6 @@
 #!/usr/bin/python
+
+import argparse
 import sys
 import time
 from bcc import BPF, USDT
@@ -52,10 +54,6 @@ BPF_STACK_TRACE(stack_traces, 10240)
 
 int trace_alloc(struct pt_regs *ctx, long tid, char *name, int nameLength, int wordSize) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
-    // not really necessary, as USDT attaches to pid
-    if (!(pid == %s))
-        return 0;
-
 
     u64 zero = 0, *val, *tc;
     struct key_t key = {.pid = pid};
@@ -74,12 +72,23 @@ int trace_alloc(struct pt_regs *ctx, long tid, char *name, int nameLength, int w
  
 """
 
-# single arg is an oop - need header file from jdk
-# http://hg.openjdk.java.net/jdk7u/jdk7u/hotspot/file/f49c3e79b676/src/share/vm/oops/oop.hpp
-pid=int(sys.argv[1])
-usdt = USDT(path="/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so", pid=int(sys.argv[1]))
+def get_arg_parser():
+    parser = argparse.ArgumentParser(description = 'Generate heap allocation flamegraphs')
+
+    parser.add_argument('-j', type=str, dest='lib_jvm_path', help='Path to libjvm.so', default='/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so')
+    parser.add_argument('-p', type=int, dest='pid', help='PID of the target process', required=True)
+    parser.add_argument('-i', type=str, dest='include_regex', help='Regex for stacks to include')
+    parser.add_argument('-e', type=str, dest='exclude_regex', help='Regex for stacks to exclude')
+    parser.add_argument('-s', type=int, dest='sampling_interval_micros', help='Sampling interval in microseconds')
+
+    return parser
+
+args = get_arg_parser().parse_args()
+
+pid = args.pid
+usdt = USDT(path=args.lib_jvm_path, pid=args.pid)
 usdt.enable_probe(probe="object__alloc", fn_name="trace_alloc")
-bpf = BPF(text=prog % (int(sys.argv[1])), usdt_contexts=[usdt])
+bpf = BPF(text=prog, usdt_contexts=[usdt])
 
 
 time.sleep(5)

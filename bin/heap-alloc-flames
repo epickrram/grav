@@ -23,7 +23,7 @@ source $SCRIPT_DIR/options-perf-thread-flames.sh
 
 $PERF_MAP_AGENT_DIR/bin/perf-java-record-stack "$PID"
 
-sudo python $GRAV_DIR/src/heap/heap_profile.py $PID > $STACKS
+sudo python $GRAV_DIR/src/heap/heap_profile.py -p $PID > $STACKS
 cat $STACKS | sudo python  $GRAV_DIR/src/heap/stacks_tidy.py $PERF_DATA_FILE $REGEX > $COLLAPSED
 cat $COLLAPSED | $FLAMEGRAPH_DIR/flamegraph.pl --title "Heap Allocation Flame Graph" $PERF_FLAME_OPTS > $PERF_FLAME_OUTPUT && \
 echo "Wrote $PERF_FLAME_OUTPUT"
