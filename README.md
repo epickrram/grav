@@ -36,6 +36,45 @@ Recording samples..
 Wrote cpu-tenancy-$PID.svg
 ```
 
+### JVM heap allocation flamegraphs
+
+Use built-in UDST DTrace probes to capture information about heap allocations in a
+running JVM.
+
+
+![Allocations](https://github.com/epickrram/blog-images/raw/master/2017_09/heap_alloc_flamegraph.png)
+
+Pre-requisites: the following repositories need to be cloned and available locally:
+
+   * [perf-map-agent](https://github.com/jvm-profiling-tools/perf-map-agent)
+   * [flamegraph](https://github.com/brendangregg/Flamegraph)
+
+Usage:
+
+```
+# set up environment variables
+$ export PERF_MAP_AGENT_DIR=/path/to/perf-map-agent/
+$ export FLAMEGRAPH_DIR=/path/to/flamegraph/
+$ ./bin/heap-alloc-flames -p $PID -e "java/lang/String" -d 10
+Profiling application to generate stack trace symbols
+Recording events for 5 seconds (adapt by setting PERF_RECORD_SECONDS)
+[ perf record: Woken up 3 times to write data ]
+[ perf record: Captured and wrote 1.156 MB /tmp/perf-$PID.data (3498 samples) ]
+Wrote allocation-flamegraph-$PID.svg
+```
+
+Parameters:
+
+```
+-p PID
+-i regex of stacks to include (e.g. -i "mycompany" "java/lang/Double")
+-e regex of stacks to exclude (e.g. -e "java/lang/String" "C[]")
+-d duration of sample in seconds
+-s sampling interval (e.g. -s 1000 -> sample every 1000th allocation)
+-j path of libjvm.so
+```
+
+
 ### Java flamegraphs with thread name
 
 Annotate JVM flamegraphs with thread names for easier focus.
