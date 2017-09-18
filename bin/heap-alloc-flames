@@ -19,7 +19,7 @@ if [[ "$PID" == "" ]]; then
 fi
 
 PERF_FLAME_OUTPUT="allocation-flamegraph-$PID.svg"
-PERF_RECORD_SECONDS=1
+export PERF_RECORD_SECONDS=1
 
 source $SCRIPT_DIR/validate-perf-map-agent.sh
 source $SCRIPT_DIR/options-perf-thread-flames.sh

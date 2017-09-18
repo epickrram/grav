@@ -68,13 +68,22 @@ struct key_t {
 };
 BPF_HASH(counts, struct key_t);
 BPF_HASH(start, u32);
+BPF_HASH(sample_count, u64);
 BPF_HASH(tids, long);
 BPF_STACK_TRACE(stack_traces, 10240)
 
+
 int trace_alloc(struct pt_regs *ctx, long tid, char *name, int nameLength, int wordSize) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
+    u64 zero = 0, *val, *tc, *current_count;
+    u64 one = 0;
+    current_count = sample_count.lookup_or_init(&zero, &zero);
+    (*current_count)++;
+    
+    if ((((*current_count) - one) & %s) != zero) {
+        return 0;
+    }
 
-    u64 zero = 0, *val, *tc;
     struct key_t key = {.pid = pid};
     bpf_probe_read(&key.name, sizeof(key.name), (void *)PT_REGS_PARM3(ctx));
 
@@ -98,17 +107,19 @@ def get_arg_parser():
     parser.add_argument('-p', type=int, dest='pid', help='PID of the target process', required=True)
     parser.add_argument('-i', type=str, dest='include_regex', help='Regex for stacks to include', nargs='*')
     parser.add_argument('-e', type=str, dest='exclude_regex', help='Regex for stacks to exclude', nargs='*')
-    parser.add_argument('-s', type=int, dest='sampling_interval_micros', help='Sampling interval in microseconds')
+    parser.add_argument('-s', type=int, dest='sampling_frequency', help='Sample every N allocations', default=1)
     parser.add_argument('-d', type=int, dest='duration_seconds', help='Recording duration in seconds', default=10)
 
     return parser
 
 args = get_arg_parser().parse_args()
 
+# TODO round up sampling frequency to next power of two
+
 pid = args.pid
 usdt = USDT(path=args.lib_jvm_path, pid=args.pid)
 usdt.enable_probe(probe="object__alloc", fn_name="trace_alloc")
-bpf = BPF(text=prog, usdt_contexts=[usdt])
+bpf = BPF(text=prog % (str(args.sampling_frequency - 1)), usdt_contexts=[usdt])
 
 
 time.sleep(float(str(args.duration_seconds)))

@@ -48,6 +48,7 @@ Pre-requisites: the following repositories need to be cloned and available local
 
    * [perf-map-agent](https://github.com/jvm-profiling-tools/perf-map-agent)
    * [flamegraph](https://github.com/brendangregg/Flamegraph)
+   * [iovisor BCC](https://github.com/iovisor/bcc)
 
 Usage:
 
@@ -71,7 +72,7 @@ Parameters:
 -e regex of stacks to exclude (e.g. -e "java/lang/String" "C[]")
 -d duration of sample in seconds
 -s sampling interval (e.g. -s 1000 -> sample every 1000th allocation)
--j path of libjvm.so
+-j path of libjvm.so (default: /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/amd64/server/libjvm.so)
 ```
 
 
