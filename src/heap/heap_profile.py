@@ -9,6 +9,23 @@ from bcc import BPF, USDT
 # minimum amount of total allocations for an object to be included in the flamegraph
 MIN_ALLOCATION_SHARE_PERCENTAGE=1
 
+def next_power_of_two(sample_interval):
+    if sample_interval == 1:
+        return sample_interval
+
+    bit_test = sample_interval
+    set_bit_count = 0
+    while bit_test != 0:
+        if (bit_test & 1) == 1:
+            set_bit_count += 1
+        bit_test /= 2
+    if set_bit_count == 1:
+        return sample_interval
+    next_power_of_two = 1
+    while next_power_of_two < sample_interval:
+        next_power_of_two *= 2
+    return next_power_of_two
+
 def apply_regex(stack_counts, regex_list, should_include):
     if regex_list is None:
         return stack_counts
@@ -76,11 +93,11 @@ BPF_STACK_TRACE(stack_traces, 10240)
 int trace_alloc(struct pt_regs *ctx, long tid, char *name, int nameLength, int wordSize) {
     u32 pid = bpf_get_current_pid_tgid() >> 32;
     u64 zero = 0, *val, *tc, *current_count;
-    u64 one = 0;
+    u64 one = 1;
     current_count = sample_count.lookup_or_init(&zero, &zero);
     (*current_count)++;
     
-    if ((((*current_count) - one) & %s) != zero) {
+    if ((((*current_count)) & %d) != zero) {
         return 0;
     }
 
@@ -114,13 +131,12 @@ def get_arg_parser():
 
 args = get_arg_parser().parse_args()
 
-# TODO round up sampling frequency to next power of two
+print prog % (next_power_of_two(args.sampling_frequency) - 1)
 
 pid = args.pid
 usdt = USDT(path=args.lib_jvm_path, pid=args.pid)
 usdt.enable_probe(probe="object__alloc", fn_name="trace_alloc")
-bpf = BPF(text=prog % (str(args.sampling_frequency - 1)), usdt_contexts=[usdt])
-
+bpf = BPF(text=prog % (next_power_of_two(args.sampling_frequency) - 1), usdt_contexts=[usdt])
 
 time.sleep(float(str(args.duration_seconds)))
 
