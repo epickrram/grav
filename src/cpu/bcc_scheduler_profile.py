@@ -106,7 +106,7 @@ for k,v in b["scheduled_out_states"].iteritems():
     tid_stats['K'] = v.wake_kill
     tid_stats['U'] = v.unknown
     if v.unknown_state_0 != 0:
-        print str(v.unknown_state_0)
+        print(v.unknown_state_0)
     total = v.total
     tid_stats['total'] = total
     if total != 0:
