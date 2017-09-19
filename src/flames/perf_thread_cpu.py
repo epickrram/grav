@@ -29,8 +29,8 @@ def get_thread_cpu_counts_from_perf_sample():
             if cpu_id > max_cpu_id:
                 max_cpu_id = cpu_id
 
-        except ValueError, IndexError:
-            print "Failed to parse line: " + line
+        except (ValueError, IndexError):
+            print("Failed to parse line: " + line)
 
     return (cpu_count_by_thread, process_name_by_tid, max_cpu_id)
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
                     data += ";" + str(tid )
 
             data += " 1"
-            print data
+            print(data)
             current_count += 1
 
         
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 #            count = 0
 #            if current_cpu_id in thread_cpu_counts[tid]:
 #                count = thread_cpu_counts[tid][current_cpu_id]
-#            print data + str(count)
+#            print(data + str(count))
 #            current_cpu_id += 1
 
 
@@ -93,5 +93,5 @@ if __name__ == "__main__":
 #            data += str(count) + " "
 #            current_cpu_id += 1
 #
-#        print data
+#        print(data)
 
