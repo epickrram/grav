@@ -71,8 +71,7 @@ with open("/tmp/tcpv4-peak.csv", "a+", 0) as p:
             total_depth = bpf["total_rcv_mem"]
             max_depth = bpf["peak_rcv_mem"]
             if len(total_depth) == 0 and len(max_depth) == 0:
-                print "No data captured"
-
+                print("No data captured")
             else:
                 for socket, total in total_depth.iteritems():
                     t.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), total.value))
@@ -80,5 +79,3 @@ with open("/tmp/tcpv4-peak.csv", "a+", 0) as p:
                     p.write("{0},{1},{2},{3}\n".format(current_time.strftime("%H:%M:%S"), current_time.strftime("%s"), to_socket_key(socket), peak.value))
                 total_depth.clear()
                 max_depth.clear()
-
-
