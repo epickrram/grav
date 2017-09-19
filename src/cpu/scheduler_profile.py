@@ -82,7 +82,7 @@ def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, p
 
     write_svg_footer(writer)
     writer.close()
-    print "Wrote {}".format(output_filename)
+    print("Wrote {}".format(output_filename))
 
 
 def get_tid_to_thread_name(jstack_file):
@@ -95,7 +95,7 @@ def get_tid_to_thread_name(jstack_file):
                 decimal_tid = int(hex_tid, 0)
                 tid_to_thread_name[str(decimal_tid)] = thread_name
             except IndexError:
-                print "Failed to parse tid from line: " + line
+                print("Failed to parse tid from line: " + line)
     return tid_to_thread_name
 
 
@@ -118,6 +118,6 @@ if __name__ == "__main__":
     thread_scheduling = json.load(sys.stdin)
     filtered_scheduling, max_total = filter_scheduler_info(thread_scheduling, tid_to_thread_name)
     if len(filtered_scheduling) == 0:
-        print "No samples for pid {}".format(process_id)
+        print("No samples for pid {}".format(process_id))
     else:
         write_svg(1200, 660, filtered_scheduling, max_total, tid_to_thread_name, process_id)
