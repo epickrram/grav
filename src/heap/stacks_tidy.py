@@ -28,7 +28,7 @@ def translateJavaPrimitiveArrays(java_trace):
         elif java_trace[0] == 'L':
             text = java_trace[1:]
     except IndexError as e:
-        print "Failed to parse: " + java_trace + ": " + str(e)
+        print("Failed to parse: " + java_trace + ": " + str(e))
     return text
 
 class PerfMapEntry:
@@ -98,5 +98,5 @@ if __name__ == "__main__":
     for line in codecs.getreader('utf-8')(sys.stdin):
         stack_entry = tidy(map_addresses(line, addresses))
 
-        print stack_entry
+        print(stack_entry)
 

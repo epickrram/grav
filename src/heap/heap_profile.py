@@ -131,7 +131,7 @@ def get_arg_parser():
 
 args = get_arg_parser().parse_args()
 
-print prog % (next_power_of_two(args.sampling_frequency) - 1)
+print(prog % (next_power_of_two(args.sampling_frequency) - 1))
 
 pid = args.pid
 usdt = USDT(path=args.lib_jvm_path, pid=args.pid)
@@ -141,7 +141,7 @@ bpf = BPF(text=prog % (next_power_of_two(args.sampling_frequency) - 1), usdt_con
 time.sleep(float(str(args.duration_seconds)))
 
 if len(bpf["tids"]) == 0:
-    print "No data found - are DTrace probes enabled in running process?"
+    print("No data found - are DTrace probes enabled in running process?")
 
 stack_traces = bpf["stack_traces"]
 all_stacks=[]
@@ -166,13 +166,13 @@ for k, v in bpf["counts"].iteritems():
         stack_counts[key_name + ";" + u";".join(stack).encode('utf-8', errors='replace')] = int(v.value)
     except UnicodeDecodeError as e:
         err_msg = str(e)
-        print "Failed to decode stack: " + k.name.strip() + ";" + str(stack) + ": " + err_msg
+        print("Failed to decode stack: " + k.name.strip() + ";" + str(stack) + ": " + err_msg)
 
 
 stack_counts = remove_objects_with_small_allocation_count(stack_counts)
 stack_counts = apply_inclusion_regex(stack_counts, args.include_regex)
 stack_counts = apply_exclusion_regex(stack_counts, args.exclude_regex)
 for k, v in stack_counts.iteritems():
-    print k + " " + str(v)
+    print(k + " " + str(v))
 
 
