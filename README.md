@@ -50,6 +50,12 @@ Pre-requisites: the following repositories need to be cloned and available local
    * [flamegraph](https://github.com/brendangregg/Flamegraph)
    * [iovisor BCC](https://github.com/iovisor/bcc)
 
+Enable allocation probes using the following JVM params:
+
+```
+-XX:+ExtendedDTraceProbes -XX:+DTraceAllocProbes
+```
+
 Usage:
 
 ```
