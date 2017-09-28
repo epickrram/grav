@@ -62,7 +62,7 @@ def get_cpu_tenancy_count_by_tid():
                     max_sample_count = cpu_sample_count['all']
 
         except AttributeError:
-            print "failed to parse line: " + line
+            print("failed to parse line: " + line)
 
     return (pid_map, max_sample_count)
 
@@ -140,7 +140,7 @@ def write_svg(width, cpu_tenancy_by_pid, max_sample_count, tid_to_thread_name, p
     write_svg_footer(writer)
     writer.close()
 
-    print "Wrote {}".format(filename)
+    print("Wrote {}".format(filename))
 
 def get_tid_to_thread_name(jstack_file):
     tid_to_thread_name = dict()
@@ -152,7 +152,7 @@ def get_tid_to_thread_name(jstack_file):
                 decimal_tid = int(hex_tid, 0)
                 tid_to_thread_name[decimal_tid] = thread_name
             except IndexError:
-                print "Failed to parse tid from line: " + line
+                print("Failed to parse tid from line: " + line)
     return tid_to_thread_name
 
 

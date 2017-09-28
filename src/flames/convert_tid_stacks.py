@@ -14,7 +14,7 @@ def get_tid_to_thread_name(jstack_file):
                 decimal_tid = int(hex_tid, 0)
                 tid_to_thread_name[decimal_tid] = thread_name
             except IndexError:
-                print "Failed to parse tid from line: " + line
+                print("Failed to parse tid from line: " + line)
 
     return tid_to_thread_name
 
@@ -61,7 +61,7 @@ def replace_tids_with_names(collapsed_stack_file, output_file, tid_to_thread_nam
             else:
                 out.write(line)
         except ValueError:
-            print "Failed to parse pid from line: " + line
+            print("Failed to parse pid from line: " + line)
     out.flush()
 
 
@@ -77,9 +77,9 @@ if __name__ == "__main__":
     aggregate_on_thread_prefix = "True" == sys.argv[5]
 
     if aggregate_on_thread_prefix:
-        print "Aggregating stacks on thread prefix"
+        print("Aggregating stacks on thread prefix")
     else:
-        print "Not aggregating stacks on thread prefix, enable by setting AGGREGATE_ON_THREAD_PREFIX=True"
+        print("Not aggregating stacks on thread prefix, enable by setting AGGREGATE_ON_THREAD_PREFIX=True")
 
     tid_to_thread_name = get_tid_to_thread_name(jstack_file)
     replace_tids_with_names(stacks_file, output_file, tid_to_thread_name, regex, aggregate_on_thread_prefix)
