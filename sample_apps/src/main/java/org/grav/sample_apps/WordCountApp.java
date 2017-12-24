@@ -13,19 +13,21 @@ import java.util.stream.Collectors;
 
 public class WordCountApp
 {
+
+    private static final String DEFAULT_FILE = "hamlet.txt";
+
     public static void main(final String[] args) throws Exception
     {
-        if (args.length < 1)
+        String file = DEFAULT_FILE;
+        if (args.length >= 1)
         {
-            System.err.println("Usage: java WordCountApp <file>");
-            System.exit(1);
+            file = args[0];
         }
 
         while (true)
         {
-
             final String content = new String(
-                Files.readAllBytes(Paths.get(ClassLoader.getSystemResource(args[0]).toURI())));
+                Files.readAllBytes(Paths.get(ClassLoader.getSystemResource(file).toURI())));
             final Map<String, Integer> wordCountByWordMap = new HashMap<>();
             for (final String word : new BruteForce().words(content))
             {

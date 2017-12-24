@@ -5,10 +5,18 @@ repositories {
     maven { url 'http://oss.sonatype.org/content/repositories/snapshots/' }
 }
 
-version = '0.1'
+sourceSets {
+    perf
+}
 
 
 dependencies {
+
+    perfCompile(
+            project,
+            'org.openjdk.jmh:jmh-core:1.19',
+            'org.openjdk.jmh:jmh-generator-annprocess:1.19'
+    )
 }
 
 
@@ -19,4 +27,50 @@ task wordcount(type: JavaExec, description: 'Run WordCountApp', group: 'sample_a
     jvmArgs('-XX:+DTraceAllocProbes', '-XX:+PreserveFramePointer', '-XX:+ExtendedDTraceProbes')
     args('hamlet.txt')
 
+}
+
+task jmh(type: JavaExec, description: 'Executing JMH benchmarks', group: 'perf') {
+    classpath = sourceSets.perf.runtimeClasspath
+    main = 'org.openjdk.jmh.Main'
+
+    def include = project.properties.get('include', '');
+    def exclude = project.properties.get('exclude');
+    def format = project.properties.get('format', 'json');
+    def profilers = project.properties.get('profilers');
+    def jvmArgs = project.properties.get('jvmArgs')
+    def iterations = project.properties.get('iterations', 15)
+    def forks = project.properties.get('forks', 2)
+    def warmUpIterations = project.properties.get('warmups', 4)
+
+    def resultFile = file("build/reports/perf/result.${format}")
+
+    args include
+    if(exclude) {
+        args '-e', exclude
+    }
+    args '-foe', 'true'   //fail-on-error
+    args '-v', 'NORMAL'   //verbosity [SILENT, NORMAL, EXTRA]
+    if(profilers) {
+        profilers.split(',').each {
+            args '-prof', it
+        }
+    }
+    args '-jvmArgsPrepend', '-Xmx1024m'
+    args '-jvmArgsAppend', '-Xms1024m'
+    if(jvmArgs) {
+        for(jvmArg in jvmArgs.split(' ')) {
+            args '-jvmArgsAppend', jvmArg
+        }
+    }
+    args '-rf', format
+    args '-rff', resultFile
+
+    args '-wi', warmUpIterations
+    args '-f', forks
+    args '-i', iterations
+
+    doFirst {
+        println "\nExecuting JMH with: $args \n"
+        resultFile.parentFile.mkdirs()
+    }
 }
