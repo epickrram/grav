@@ -57,6 +57,7 @@ task jmh(type: JavaExec, description: 'Executing JMH benchmarks', group: 'perf')
     }
     args '-jvmArgsPrepend', '-Xmx1024m'
     args '-jvmArgsAppend', '-Xms1024m'
+    args '-jvmArgsAppend', '-XX:+PreserveFramePointer'
     if(jvmArgs) {
         for(jvmArg in jvmArgs.split(' ')) {
             args '-jvmArgsAppend', jvmArg
