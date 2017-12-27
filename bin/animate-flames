@@ -6,7 +6,8 @@ SCRIPT_DIR=$(dirname "$0")
 
 PID="${1:-}"
 NUMBER_OF_RECORDINGS="${2:-}"
-REGEX="${3:-NOT_SET}"
+SLEEP_SECONDS="${3:-}"
+REGEX="${4:-NOT_SET}"
 
 if [[ "$PID" == "" ]]; then
   echo "Please supply pid as first parameter"
@@ -15,6 +16,11 @@ fi
 
 if [[ "$NUMBER_OF_RECORDINGS" == "" ]]; then
   echo "Please supply number of captures as second parameter"
+  exit 1
+fi
+
+if [[ "$SLEEP_SECONDS" == "" ]]; then
+  echo "Please supply seconds to sleep as third parameter"
   exit 1
 fi
 
@@ -47,6 +53,8 @@ while [[ $i -le $NUMBER_OF_RECORDINGS ]]
             echo "Wrote flamegraph-$PID-$i.svg"
 
 			((i = i + 1))
+
+			sleep $SLEEP_SECONDS
         done 
 
 python $GRAV_DIR/src/animation/merge_collapsed_to_animate.py $PERF_JAVA_TMP $COLLAPSED_WITH_THREADS_PREFIX animated-$COLLAPSED_WITH_THREADS_PREFIX.collapsed
