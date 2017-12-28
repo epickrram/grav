@@ -1,6 +1,7 @@
 package org.grav.benchmarks;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.CompilerControl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 public class SafepointBenchmark
 {
     @Benchmark
-
     public void findTheSafepoint()
     {
         int sum = 0;
@@ -20,6 +20,7 @@ public class SafepointBenchmark
         cheapMethod(sum);
     }
 
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private void cheapMethod(final int sum)
     {
         if (sum != 1073741825) {
