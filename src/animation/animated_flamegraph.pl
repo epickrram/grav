@@ -803,7 +803,7 @@ my $inc = <<INC;
 
 	function animate() {
 		var size = Object.keys(animateTagsByPhaseMap).length;
-		if (animationPhase < size) {
+		if (animationPhase <= size) {
 			animatebtn.textContent = "" + animationPhase;
 			setTimeout(function() {
 						var currentPhase = animationPhase++;
