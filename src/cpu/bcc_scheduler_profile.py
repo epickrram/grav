@@ -36,63 +36,41 @@ struct proc_counter_t {
 BPF_TABLE("hash", pid_t, struct proc_counter_t, usurpers, 1024);
 BPF_TABLE("hash", pid_t, struct scheduled_out_state_t, scheduled_out_states, 1024);
 
-int trace_finish_task_switch(struct pt_regs *ctx, struct task_struct *prev) {
-    int pid_to_record = %d;
-    int should_track_usurpers = %d;
+TRACEPOINT_PROBE(sched, sched_switch) {
+    pid_t prev_pid = args->prev_pid;
 
-    pid_t prev_pid = prev->pid;
-    pid_t parent_pid = prev->parent->pid;
-    pid_t incoming_pid = bpf_get_current_pid_tgid();
-    // only works on newer kernels (e.g. 4.10)
-    if (should_track_usurpers) {
-        struct task_struct *task;
-        task = (struct task_struct *)bpf_get_current_task();
-        pid_t current_parent_pid = task->parent->pid;
-        
-        struct proc_counter_t *counter = usurpers.lookup(&incoming_pid);
-        if (counter == 0) {
-            struct proc_counter_t new_counter = {.proc_name = NULL, .count = 0};
-            bpf_get_current_comm(&new_counter.proc_name, sizeof(new_counter.proc_name));
-            counter = &new_counter;
-            usurpers.update(&incoming_pid, counter);
-        }
-        if (prev->state == 0) {
-            counter->count++;
-        }
-    }
-    
     struct scheduled_out_state_t *states = scheduled_out_states.lookup(&prev_pid);
     if (states == 0) {
         struct scheduled_out_state_t new_state = {.running = 0, .sleeping = 0, .uninterruptible = 0, .unknown = 0};
         states = &new_state;
         scheduled_out_states.update(&prev_pid, states);
     }
-    
+
     // TODO consider switch statement
     states->total++;
-    if (prev->state == 0) {
-        states->running++; 
-    } else if (prev->state == 1) {
+    if (args->prev_state == 0) {
+        states->running++;
+    } else if (args->prev_state == 1) {
         states->sleeping++;
-    } else if (prev->state == 2) {
+    } else if (args->prev_state == 2) {
         states->uninterruptible++;
-    } else if ((prev->state | 64) != 0) {
+    } else if ((args->prev_state | 64) != 0) {
         states->dead++;
-    } else if ((prev->state | 128) != 0) {
+    } else if ((args->prev_state | 128) != 0) {
         states->wake_kill++;
     } else {
         states->unknown++;
-        states->unknown_state_0 = prev->state;
+        states->unknown_state_0 = args->prev_state;
     }
 
     return 0;
 };
 """
 
+
 SHOULD_TRACK_USURPERS = 0
 
-b = BPF(text=prog % (int(sys.argv[1]), SHOULD_TRACK_USURPERS))
-b.attach_kprobe(event="finish_task_switch", fn_name="trace_finish_task_switch")
+b = BPF(text=prog)
 
 time.sleep(int(sys.argv[2]))
 
