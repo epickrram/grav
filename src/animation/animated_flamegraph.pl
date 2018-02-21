@@ -242,7 +242,7 @@ SVG
 			my $w = sprintf "%0.1f", $x2 - $x1;
 			my $wDiff = $w - $oldw;
 			$wDiff = sprintf "%0.1f", $wDiff;
-			if ($wDiff != 0) {
+			if ($j > 0 && $wDiff != 0) {
 					$self->{svg} .= qq/<animate id="a${animateIdIndex}p$j" attributeType="XML" attributeName="width" from="0" to="$wDiff" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/;
 			}
 			$oldw = $w;
@@ -262,10 +262,8 @@ SVG
 			$x2 = $xpad + ($stime[$j] + $d[$j]) * $widthpertime;
 			$x1 = sprintf "%0.1f", $x1;
 			$x2 = sprintf "%0.1f", $x2;
-			#my $begin = ($duration + $delay) * $j;
-			#my $animateId = "$stime[$j];$y1;$j";
 			my $x1Diff = sprintf "%0.1f", $x1 - $oldx1;
-			if ($x1Diff != 0) {
+			if ($j > 0 && $x1Diff != 0) {
 				$self->{svg} .= qq/<animateTransform id="a${animateIdIndex}p$j" type="translate" attributeName="transform" from="0 0" to="$x1Diff 0" dur="${duration}s" fill="freeze" additive="sum" begin="indefinite"\/>\n/;
 			}
 			$oldx1 = $x1;
@@ -803,7 +801,7 @@ my $inc = <<INC;
 
 	function animate() {
 		var size = Object.keys(animateTagsByPhaseMap).length;
-		if (animationPhase < size) {
+		if (animationPhase <= size) {
 			animatebtn.textContent = "" + animationPhase;
 			setTimeout(function() {
 						var currentPhase = animationPhase++;

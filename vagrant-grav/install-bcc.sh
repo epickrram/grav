@@ -20,7 +20,7 @@ make clean
 make
 sudo make install
 
-sudo apt-get install build-essential linux-headers-4.10.0-28-generic
+sudo apt-get --assume-yes install build-essential linux-headers-`uname -r`
 
 
 

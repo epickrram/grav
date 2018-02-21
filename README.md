@@ -135,8 +135,9 @@ Usage:
 # set up environment variables
 $ export PERF_MAP_AGENT_DIR=/path/to/perf-map-agent/
 $ export FLAMEGRAPH_DIR=/path/to/flamegraph/
-# run animate-flames PID NUMBER_OF_RECORDINGS (= 5 in this case) 
-$ ./bin/animate-flames $PID 5
+# run animate-flames PID NUMBER_OF_RECORDINGS SLEEP_SECONDS
+# (in this example  NUMBER_OF_RECORDINGS = 5, SLEEP_SECONDS=10)
+$ ./bin/animate-flames $PID 5 10 
 Recording events for 10 seconds (adapt by setting PERF_RECORD_SECONDS)
 [ perf record: Woken up 1 times to write data ]
 [ perf record: Captured and wrote 0.114 MB /tmp/perf-$PID.data (~4993 samples) ]
