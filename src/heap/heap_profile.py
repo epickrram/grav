@@ -87,7 +87,7 @@ BPF_HASH(counts, struct key_t);
 BPF_HASH(start, u32);
 BPF_HASH(sample_count, u64);
 BPF_HASH(tids, long);
-BPF_STACK_TRACE(stack_traces, 10240)
+BPF_STACK_TRACE(stack_traces, 10240);
 
 
 int trace_alloc(struct pt_regs *ctx, long tid, char *name, int nameLength, int wordSize) {
