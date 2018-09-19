@@ -53,7 +53,7 @@ Pre-requisites: the following repositories need to be cloned and available local
 Enable allocation probes using the following JVM params:
 
 ```
--XX:+ExtendedDTraceProbes -XX:+DTraceAllocProbes
+-XX:+DTraceAllocProbes
 ```
 
 Usage:
