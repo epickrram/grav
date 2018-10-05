@@ -5,7 +5,7 @@ import sys
 
 STATE_COLOURS = {'S': '#acff90', 'R': '#ffaeae', 'D': '#fce94f', 'K': '#c00', 'x': '#0c0', 'U': '#ccc'}
 STROKE_COLOURS = {'S': '#679657', 'R': '#b07979', 'D': '#b3a639', 'K': '#600', 'x': '#060', 'U': '#aaa'}
-STATE_DESCRIPTORS = {'S': 'Sleeping', 'R': 'Runnable', 'D': 'Blocked I/O', 'K': 'Killed', 'x': 'Dead'}
+STATE_DESCRIPTORS = {'S': 'Sleeping', 'R': 'Runnable', 'D': 'Blocked I/O', 'K': 'Killed', 'x': 'Dead', 'Tr': 'Tracing', 'St': 'Stopped', 'P': 'Parked'}
 
 def write_svg_header(writer, width, height):
     writer.write(
@@ -69,7 +69,7 @@ def write_svg(width, height, thread_scheduling, max_total, tid_to_thread_name, p
         tid_sample_count = thread_scheduling[tid]['total']
         single_sample_width = float((width - (2 * border)) / float(thread_scheduling[tid]['total']))
         text_written = False
-        for state in ['S', 'R', 'D', 'U', 'x', 'K']:
+        for state in ['S', 'R', 'D', 'U', 'x', 'K', 'Tr', 'St', 'P']:
             sample_count = thread_scheduling[tid][state]
 
             if sample_count > 0:

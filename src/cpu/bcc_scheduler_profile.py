@@ -21,6 +21,10 @@ struct scheduled_out_state_t {
     int running;
     int sleeping;
     int uninterruptible;
+    int traced;
+    int stopped;
+    int parked;
+    int idle;
     int unknown;
     int dead;
     int wake_kill;
@@ -45,18 +49,26 @@ TRACEPOINT_PROBE(sched, sched_switch) {
         states = &new_state;
         scheduled_out_states.update(&prev_pid, states);
     }
+   
+    // 4, 64, 32
 
     // TODO consider switch statement
     states->total++;
-    if (args->prev_state == 0) {
+    if (args->prev_state == TASK_RUNNING) {
         states->running++;
-    } else if (args->prev_state == 1) {
+    } else if (args->prev_state == TASK_INTERRUPTIBLE) { // "An Interruptible sleep state means the process is waiting either for a particular time slot or for a particular event to occur."
         states->sleeping++;
-    } else if (args->prev_state == 2) {
+    } else if (args->prev_state == TASK_UNINTERRUPTIBLE) { // "The Uninterruptible state is mostly used by device drivers waiting for disk or network I/O."
         states->uninterruptible++;
-    } else if ((args->prev_state | 64) != 0) {
+    } else if (args->prev_state == __TASK_TRACED || args->prev_state == TASK_TRACED) {
+        states->traced++;
+    } else if (args->prev_state == __TASK_STOPPED || args->prev_state == TASK_STOPPED) {
+        states->stopped++;
+    } else if (args->prev_state == TASK_PARKED) {
+        states->parked++;
+    } else if ((args->prev_state & (TASK_DEAD | EXIT_ZOMBIE | EXIT_DEAD)) != 0) {
         states->dead++;
-    } else if ((args->prev_state | 128) != 0) {
+    } else if ((args->prev_state & TASK_WAKEKILL) != 0) {
         states->wake_kill++;
     } else {
         states->unknown++;
@@ -80,6 +92,9 @@ for k,v in b["scheduled_out_states"].iteritems():
     tid_stats['R'] = v.running
     tid_stats['S'] = v.sleeping
     tid_stats['D'] = v.uninterruptible
+    tid_stats['Tr'] = v.traced
+    tid_stats['St'] = v.stopped
+    tid_stats['P'] = v.parked
     tid_stats['x'] = v.dead
     tid_stats['K'] = v.wake_kill
     tid_stats['U'] = v.unknown
