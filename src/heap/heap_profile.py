@@ -131,8 +131,6 @@ def get_arg_parser():
 
 args = get_arg_parser().parse_args()
 
-print(prog % (next_power_of_two(args.sampling_frequency) - 1))
-
 pid = args.pid
 usdt = USDT(path=args.lib_jvm_path, pid=args.pid)
 usdt.enable_probe(probe="object__alloc", fn_name="trace_alloc")
